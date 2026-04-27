@@ -43,7 +43,7 @@ npm run dev
 docker compose -f docker-compose.dev.yml --profile full up -d
 
 # Suivre les logs (premier démarrage : compilation Nitro/Vite)
-docker compose -f docker-compose.dev.yml logs -f app-dev
+docker compose -f docker-compose.dev.yml --profile full logs -f app-dev
 ```
 
 Le code source est bind-monté → toute modification d'un fichier Vue / TS déclenche le HMR Vite ou la recompilation Nitro côté serveur. `node_modules` reste isolé dans un volume Docker (pas de conflit binaire hôte ↔ Linux).
@@ -159,7 +159,7 @@ shared/types.ts             Types partagés client/serveur
 prisma/schema.prisma        Schéma de base
 prisma/migrations/          Migrations Prisma
 docker-compose.yml          Stack prod (Nuxt + Postgres)
-docker-compose.dev.yml      Postgres seul pour le dev
+docker-compose.dev.yml      Postgres pour le dev (+ app-dev avec --profile full)
 Dockerfile                  Build multi-stage
 ```
 

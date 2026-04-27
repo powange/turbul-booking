@@ -26,6 +26,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    env_file:
+      - stack.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-turbul}:${POSTGRES_PASSWORD:-turbul}@postgres:5432/${POSTGRES_DB:-turbul_booking}?schema=public
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}

@@ -52,6 +52,10 @@ const userMenu = computed(() => [
           />
         </UDropdownMenu>
       </template>
+
+      <template #body>
+        <UNavigationMenu :items="navItems" orientation="vertical" />
+      </template>
     </UHeader>
 
     <UMain>

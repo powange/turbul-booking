@@ -10,6 +10,7 @@ const navItems = computed(() => {
   if (role.value === 'ADMIN') {
     items.push({ label: 'Utilisateurs', to: '/admin/users', icon: 'i-lucide-shield-user' })
     items.push({ label: 'Audit', to: '/admin/audit', icon: 'i-lucide-history' })
+    items.push({ label: 'Import/Export', to: '/admin/import-export', icon: 'i-lucide-database-backup' })
   }
   return items
 })

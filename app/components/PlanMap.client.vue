@@ -21,6 +21,7 @@ const config = useRuntimeConfig()
 
 const mapEl = ref<HTMLElement>()
 let map: L.Map | null = null
+let resizeObserver: ResizeObserver | null = null
 const polygons = new Map<string, L.Polygon>()
 const markers = new Map<string, L.Marker>()
 
@@ -123,10 +124,18 @@ onMounted(() => {
   ]
   map = L.map(mapEl.value, { zoomControl: true, maxZoom: 22 }).setView(center, config.public.mapDefaultZoom as number)
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap',
-    maxZoom: 22
-  }).addTo(map)
+    maxZoom: 22,
+    maxNativeZoom: 19
+  })
+  const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+    maxZoom: 22,
+    maxNativeZoom: 22
+  })
+  osmLayer.addTo(map)
+  L.control.layers({ Plan: osmLayer, Satellite: satelliteLayer }, undefined, { position: 'topright' }).addTo(map)
 
   map.on('click', (e) => {
     if (props.placeMode && props.canEdit) {
@@ -137,6 +146,9 @@ onMounted(() => {
   })
 
   diffSync(props.caravans)
+
+  resizeObserver = new ResizeObserver(() => map?.invalidateSize())
+  resizeObserver.observe(mapEl.value)
 })
 
 watch(() => props.caravans, list => diffSync(list), { deep: true })
@@ -149,6 +161,8 @@ watch(() => props.placeMode, (mode) => {
 })
 
 onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
   map?.remove()
   map = null
   polygons.clear()

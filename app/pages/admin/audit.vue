@@ -206,7 +206,7 @@ function toggle(id: string) {
 
     <div class="flex items-center justify-between text-sm">
       <span class="text-muted">Page {{ page }} / {{ totalPages }}</span>
-      <UButtonGroup>
+      <UFieldGroup>
         <UButton
           icon="i-lucide-chevron-left"
           variant="outline"
@@ -221,7 +221,7 @@ function toggle(id: string) {
           :disabled="page >= totalPages"
           @click="page++"
         />
-      </UButtonGroup>
+      </UFieldGroup>
     </div>
   </UContainer>
 </template>

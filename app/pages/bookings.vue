@@ -101,11 +101,11 @@ const dayOptions = [
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
-      <UButtonGroup>
+      <UFieldGroup>
         <UButton icon="i-lucide-chevron-left" variant="outline" @click="shiftDays(-days)" />
         <UButton variant="outline" @click="goToday">Aujourd'hui</UButton>
         <UButton icon="i-lucide-chevron-right" variant="outline" @click="shiftDays(days)" />
-      </UButtonGroup>
+      </UFieldGroup>
 
       <UInput v-model="startIso" type="date" />
 

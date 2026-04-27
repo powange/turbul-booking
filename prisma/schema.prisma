@@ -149,6 +149,17 @@ model Booking {
   @@index([guestId])
 }
 
+// Zones décoratives sur le plan (polygones libres). Pas de lien aux
+// réservations : sert uniquement de repère visuel.
+model Zone {
+  id        String   @id @default(cuid())
+  name      String
+  color     String
+  points    Json     // [[lat, lng], [lat, lng], ...] — au moins 3 sommets
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model AuditLog {
   id         String   @id @default(cuid())
   userId     String?

@@ -53,6 +53,15 @@ export interface Booking {
   guest?: Guest
 }
 
+export interface Zone {
+  id: string
+  name: string
+  color: string
+  points: Array<[number, number]>
+  createdAt: string
+  updatedAt: string
+}
+
 export type RealtimeEvent =
   | 'caravan:created'
   | 'caravan:updated'
@@ -64,6 +73,9 @@ export type RealtimeEvent =
   | 'booking:deleted'
   | 'guest:created'
   | 'guest:updated'
+  | 'zone:created'
+  | 'zone:updated'
+  | 'zone:deleted'
 
 export interface RealtimeMessage<T = unknown> {
   event: RealtimeEvent

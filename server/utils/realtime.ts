@@ -23,6 +23,9 @@ export type RealtimeEvent =
   | 'booking:deleted'
   | 'guest:created'
   | 'guest:updated'
+  | 'zone:created'
+  | 'zone:updated'
+  | 'zone:deleted'
 
 export function broadcast(event: RealtimeEvent, payload: unknown) {
   const message = JSON.stringify({ event, payload })

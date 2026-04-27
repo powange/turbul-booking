@@ -4,15 +4,26 @@
 @theme static {
   --font-sans: 'Public Sans', sans-serif;
 
-  --color-green-50: #EFFDF5;
-  --color-green-100: #D9FBE8;
-  --color-green-200: #B3F5D1;
-  --color-green-300: #75EDAE;
-  --color-green-400: #00DC82;
-  --color-green-500: #00C16A;
-  --color-green-600: #00A155;
-  --color-green-700: #007F45;
-  --color-green-800: #016538;
-  --color-green-900: #0A5331;
-  --color-green-950: #052E16;
+  --color-turbul-50:  #fdf4ee;
+  --color-turbul-100: #fbdbc4;
+  --color-turbul-200: #f6c0a0;
+  --color-turbul-300: #efa078;
+  --color-turbul-400: #df8055;
+  --color-turbul-500: #cb6743;
+  --color-turbul-600: #b65838;
+  --color-turbul-700: #964530;
+  --color-turbul-800: #79392a;
+  --color-turbul-900: #623024;
+  --color-turbul-950: #341812;
+}
+
+:root {
+  --brand-heading: #961916;
+}
+.dark {
+  --brand-heading: var(--color-turbul-200);
+}
+
+h1, h2, h3 {
+  color: var(--brand-heading);
 }

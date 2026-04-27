@@ -19,6 +19,12 @@ export default defineNuxtConfig({
     }
   },
 
+  // La page Plan dépend entièrement de l'auth (canEdit) et de Leaflet
+  // (client-only) ; SSR n'apporte rien et provoque des mismatchs d'hydratation.
+  routeRules: {
+    '/': { ssr: false }
+  },
+
   // Polling activé via CHOKIDAR_USEPOLLING — utile dans le conteneur de dev
   // (sinon Vite ne voit pas certaines modifications de fichiers via bind mount).
   vite: {
@@ -30,7 +36,15 @@ export default defineNuxtConfig({
     // Pré-bundle pour éviter qu'un import CJS dynamique (leaflet) ne déclenche
     // un re-optimize + reload de la page côté client.
     optimizeDeps: {
-      include: ['leaflet', 'better-auth/vue', 'better-auth/client/plugins']
+      include: [
+        'leaflet',
+        '@geoman-io/leaflet-geoman-free',
+        'better-auth/vue',
+        'better-auth/client/plugins',
+        'zod',
+        '@vue/devtools-core',
+        '@vue/devtools-kit'
+      ]
     }
   },
 

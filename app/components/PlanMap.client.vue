@@ -1,20 +1,29 @@
 <script setup lang="ts">
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import '@geoman-io/leaflet-geoman-free'
+import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 import { caravanCorners } from '~/utils/geo'
-import type { Caravan } from '~~/shared/types'
+import type { Caravan, Zone } from '~~/shared/types'
 
 const props = defineProps<{
   caravans: Caravan[]
+  zones: Zone[]
   selectedId: string | null
+  selectedZoneId: string | null
   canEdit: boolean
   placeMode: boolean
+  zoneDrawMode: boolean
+  draftZoneColor?: string
 }>()
 
 const emit = defineEmits<{
   select: [id: string | null]
+  selectZone: [id: string | null]
   move: [id: string, lat: number, lng: number]
   placeAt: [lat: number, lng: number]
+  zoneCreated: [points: Array<[number, number]>]
+  zoneEdited: [id: string, points: Array<[number, number]>]
 }>()
 
 const config = useRuntimeConfig()
@@ -24,6 +33,13 @@ let map: L.Map | null = null
 let resizeObserver: ResizeObserver | null = null
 const polygons = new Map<string, L.Polygon>()
 const markers = new Map<string, L.Marker>()
+const zonePolygons = new Map<string, L.Polygon>()
+const ZONE_PANE = 'zonesPane'
+
+// L'id de la zone actuellement éditée via Geoman. Quand non null, on ignore
+// les mises à jour de props sur cette zone pour ne pas désynchroniser les
+// poignées de sommets.
+let editingZoneId: string | null = null
 
 function styleFor(c: Caravan, selected: boolean) {
   return {
@@ -116,13 +132,141 @@ function diffSync(list: Caravan[]) {
   for (const c of list) syncCaravan(c)
 }
 
-onMounted(() => {
-  if (!mapEl.value) return
+function zoneStyle(z: Zone) {
+  return {
+    color: z.color,
+    weight: 2,
+    fillColor: z.color,
+    fillOpacity: 0.25
+  }
+}
+
+function pointsToLatLngs(points: Array<[number, number]>): L.LatLngExpression[] {
+  return points.map(([lat, lng]) => [lat, lng] as L.LatLngExpression)
+}
+
+function latLngsToPoints(layer: L.Polygon): Array<[number, number]> {
+  const raw = layer.getLatLngs() as L.LatLng[] | L.LatLng[][]
+  const ring = Array.isArray(raw[0]) ? (raw as L.LatLng[][])[0]! : (raw as L.LatLng[])
+  return ring.map(ll => [ll.lat, ll.lng] as [number, number])
+}
+
+function syncZone(z: Zone) {
+  if (!map) return
+  // Ne pas écraser la géométrie d'une zone en cours d'édition
+  if (editingZoneId === z.id) {
+    const existing = zonePolygons.get(z.id)
+    if (existing) {
+      existing.setStyle(zoneStyle(z))
+      existing.getTooltip()?.setContent(z.name)
+    }
+    return
+  }
+
+  const existing = zonePolygons.get(z.id)
+  const latlngs = pointsToLatLngs(z.points)
+
+  if (existing) {
+    existing.setLatLngs(latlngs)
+    existing.setStyle(zoneStyle(z))
+    existing.getTooltip()?.setContent(z.name)
+  } else {
+    const polygon = L.polygon(latlngs, {
+      ...zoneStyle(z),
+      pane: ZONE_PANE,
+      interactive: true
+    })
+    polygon.bindTooltip(z.name, {
+      permanent: true,
+      direction: 'center',
+      className: 'zone-label',
+      interactive: false
+    })
+    polygon.on('click', (e) => {
+      if (props.zoneDrawMode) return
+      L.DomEvent.stopPropagation(e)
+      if (props.canEdit) emit('selectZone', z.id)
+    })
+    polygon.addTo(map)
+    zonePolygons.set(z.id, polygon)
+  }
+}
+
+function removeZone(id: string) {
+  const p = zonePolygons.get(id)
+  if (!p) return
+  p.pm?.disable?.()
+  p.unbindTooltip()
+  p.remove()
+  zonePolygons.delete(id)
+  if (editingZoneId === id) editingZoneId = null
+}
+
+function diffSyncZones(list: Zone[]) {
+  if (!map) return
+  const newIds = new Set(list.map(z => z.id))
+  for (const id of [...zonePolygons.keys()]) {
+    if (!newIds.has(id)) removeZone(id)
+  }
+  for (const z of list) syncZone(z)
+}
+
+function startZoneDraw() {
+  if (!map) return
+  const color = props.draftZoneColor ?? '#3b82f6'
+  map.pm.enableDraw('Polygon', {
+    snappable: false,
+    pathOptions: { color, fillColor: color, fillOpacity: 0.25, weight: 2 },
+    hintlineStyle: { color, dashArray: [5, 5] },
+    templineStyle: { color }
+  })
+}
+
+function stopZoneDraw() {
+  if (!map) return
+  if (map.pm.globalDrawModeEnabled?.()) map.pm.disableDraw()
+}
+
+function applyZoneEditMode(id: string | null) {
+  if (!map) return
+  if (editingZoneId && editingZoneId !== id) {
+    const prev = zonePolygons.get(editingZoneId)
+    if (prev) {
+      prev.pm.disable()
+      prev.off('pm:edit')
+      prev.off('pm:dragend')
+    }
+  }
+  editingZoneId = id
+  if (id) {
+    const target = zonePolygons.get(id)
+    if (target) {
+      target.pm.enable({
+        allowSelfIntersection: false,
+        snappable: false,
+        draggable: true
+      })
+      const onUpdate = () => {
+        emit('zoneEdited', id, latLngsToPoints(target))
+      }
+      target.on('pm:edit', onUpdate)
+      target.on('pm:dragend', onUpdate)
+    }
+  }
+}
+
+function initMap() {
+  if (map || !mapEl.value) return
   const center: L.LatLngExpression = [
     config.public.mapDefaultLat as number,
     config.public.mapDefaultLng as number
   ]
   map = L.map(mapEl.value, { zoomControl: true, maxZoom: 22 }).setView(center, config.public.mapDefaultZoom as number)
+
+  // Pane pour les zones, sous overlayPane (caravanes) — z-index 350 < 400
+  map.createPane(ZONE_PANE)
+  const zonesPane = map.getPane(ZONE_PANE)
+  if (zonesPane) zonesPane.style.zIndex = '350'
 
   const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap',
@@ -140,14 +284,47 @@ onMounted(() => {
   map.on('click', (e) => {
     if (props.placeMode && props.canEdit) {
       emit('placeAt', e.latlng.lat, e.latlng.lng)
-    } else {
-      emit('select', null)
+      return
     }
+    if (props.zoneDrawMode) return
+    emit('select', null)
+    emit('selectZone', null)
+  })
+
+  // Création de zone via Geoman
+  map.on('pm:create', (e: any) => {
+    if (!props.zoneDrawMode) return
+    const layer = e.layer as L.Polygon
+    const points = latLngsToPoints(layer)
+    layer.remove()
+    emit('zoneCreated', points)
   })
 
   diffSync(props.caravans)
+  diffSyncZones(props.zones)
+  if (props.zoneDrawMode) startZoneDraw()
+  if (props.selectedZoneId) applyZoneEditMode(props.selectedZoneId)
+}
 
-  resizeObserver = new ResizeObserver(() => map?.invalidateSize())
+onMounted(() => {
+  if (!mapEl.value) return
+
+  const tryInit = () => {
+    if (map || !mapEl.value) return
+    const rect = mapEl.value.getBoundingClientRect()
+    if (rect.width > 0 && rect.height > 0) initMap()
+  }
+
+  // Tentative synchrone : couvre la nav client-side (container déjà mesuré)
+  tryInit()
+
+  // Observer : initialise dès que le container reçoit une taille valide
+  // (cas du hard reload où la mise en page n'est pas finie au mount), puis
+  // invalideSize sur les resizes ultérieurs.
+  resizeObserver = new ResizeObserver(() => {
+    if (!map) tryInit()
+    else map.invalidateSize()
+  })
   resizeObserver.observe(mapEl.value)
 })
 
@@ -159,6 +336,18 @@ watch(() => props.placeMode, (mode) => {
   if (!mapEl.value) return
   mapEl.value.style.cursor = mode ? 'crosshair' : ''
 })
+watch(() => props.zones, list => diffSyncZones(list), { deep: true })
+watch(() => props.zoneDrawMode, (mode) => {
+  if (mode) startZoneDraw()
+  else stopZoneDraw()
+})
+watch(() => props.selectedZoneId, id => applyZoneEditMode(id))
+watch(() => props.draftZoneColor, () => {
+  if (props.zoneDrawMode) {
+    stopZoneDraw()
+    startZoneDraw()
+  }
+})
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
@@ -167,6 +356,8 @@ onBeforeUnmount(() => {
   map = null
   polygons.clear()
   markers.clear()
+  zonePolygons.clear()
+  editingZoneId = null
 })
 </script>
 
@@ -192,5 +383,21 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   pointer-events: auto;
+}
+.zone-label.leaflet-tooltip {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  font-weight: 700;
+  font-size: 13px;
+  color: white;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.7),
+    0 0 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+.zone-label.leaflet-tooltip::before {
+  display: none;
 }
 </style>

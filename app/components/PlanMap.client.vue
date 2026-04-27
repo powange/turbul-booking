@@ -306,32 +306,29 @@ function initMap() {
   if (props.selectedZoneId) applyZoneEditMode(props.selectedZoneId)
 }
 
-onMounted(() => {
-  if (!mapEl.value) return
+// L'enveloppe automatique liée au suffix `.client.vue` peut faire fire
+// onMounted avant que le ref de template soit lié. On attend donc que mapEl
+// devienne disponible via un watch immediate (post-flush pour avoir le DOM).
+const stopMapElWatch = watch(() => mapEl.value, (el) => {
+  if (!el) return
+  stopMapElWatch()
 
   const tryInit = () => {
-    if (map || !mapEl.value) return
-    const rect = mapEl.value.getBoundingClientRect()
+    if (map || !el) return
+    const rect = el.getBoundingClientRect()
     if (rect.width > 0 && rect.height > 0) initMap()
   }
 
-  // Tentatives échelonnées pour couvrir tous les timings de layout :
-  // - sync : nav client-side, container déjà mesuré
-  // - RAF : après le premier paint
-  // - 200ms : après les transitions Nuxt/UApp
   tryInit()
   requestAnimationFrame(tryInit)
   setTimeout(tryInit, 200)
 
-  // Observer : initialise dès que le container reçoit une taille valide
-  // (cas du hard reload où la mise en page n'est pas finie au mount), puis
-  // invalidateSize sur les resizes ultérieurs.
   resizeObserver = new ResizeObserver(() => {
     if (!map) tryInit()
     else map.invalidateSize()
   })
-  resizeObserver.observe(mapEl.value)
-})
+  resizeObserver.observe(el)
+}, { immediate: true, flush: 'post' })
 
 watch(() => props.caravans, list => diffSync(list), { deep: true })
 watch(() => props.selectedId, () => {

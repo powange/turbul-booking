@@ -200,7 +200,7 @@ async function updateZonePoints(id: string, points: Array<[number, number]>) {
 </script>
 
 <template>
-  <div class="relative h-[calc(100vh-var(--ui-header-height,64px))] w-full">
+  <div class="relative h-[calc(100dvh-4rem)] w-full">
     <PlanMap
       :caravans="caravans"
       :zones="zones"

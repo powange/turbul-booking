@@ -1,0 +1,166 @@
+// Prisma schema — turbul-booking
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================================
+// Authentification (better-auth) — tables gérées par better-auth
+// =====================================================================
+
+enum Role {
+  ADMIN
+  MANAGER
+  VIEWER
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(VIEWER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions       Session[]
+  accounts       Account[]
+  bookingsCreated Booking[] @relation("BookingCreatedBy")
+  auditLogs       AuditLog[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// =====================================================================
+// Domaine métier — caravanes, lits, hôtes, réservations
+// =====================================================================
+
+model Caravan {
+  id             String    @id @default(cuid())
+  name           String
+  lat            Float
+  lng            Float
+  rotation       Float     @default(0)   // orientation en degrés (0–360)
+  width          Float     @default(2.5) // largeur en mètres
+  length         Float     @default(6.0) // longueur en mètres
+  hasElectricity Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  beds Bed[]
+
+  @@index([deletedAt])
+}
+
+model Bed {
+  id        String @id @default(cuid())
+  caravanId String
+  label     String
+  capacity  Int    // 1, 2 ou 3
+  position  Int    @default(0) // ordre d'affichage dans la caravane
+
+  caravan  Caravan   @relation(fields: [caravanId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([caravanId])
+}
+
+model Guest {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@index([lastName, firstName])
+}
+
+// Une ligne par nuit. La capacité du lit est vérifiée applicativement
+// (count(bookings où bedId=X et date=Y) ≤ bed.capacity).
+model Booking {
+  id          String   @id @default(cuid())
+  bedId       String
+  guestId     String
+  date        DateTime @db.Date
+  createdById String
+  createdAt   DateTime @default(now())
+
+  bed       Bed   @relation(fields: [bedId], references: [id], onDelete: Restrict)
+  guest     Guest @relation(fields: [guestId], references: [id], onDelete: Restrict)
+  createdBy User  @relation("BookingCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@unique([bedId, date, guestId])
+  @@index([bedId, date])
+  @@index([date])
+  @@index([guestId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String   // ex: CARAVAN_CREATE, CARAVAN_MOVE, BED_UPDATE, BOOKING_CREATE...
+  entityType String   // ex: Caravan, Bed, Booking, Guest, User
+  entityId   String?
+  payload    Json?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([userId])
+}

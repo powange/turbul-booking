@@ -1,0 +1,39 @@
+{
+  "name": "turbul-booking",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "preview": "nuxt preview",
+    "start": "node .output/server/index.mjs",
+    "postinstall": "nuxt prepare && prisma generate",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.102",
+    "@iconify-json/simple-icons": "^1.2.78",
+    "@nuxt/ui": "^4.6.1",
+    "@prisma/client": "^6.2.0",
+    "better-auth": "^1.1.0",
+    "dayjs": "^1.11.13",
+    "leaflet": "^1.9.4",
+    "nuxt": "^4.4.2",
+    "tailwindcss": "^4.2.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.15.2",
+    "@types/leaflet": "^1.9.15",
+    "@types/node": "^22.10.0",
+    "eslint": "^10.2.0",
+    "prisma": "^6.2.0",
+    "typescript": "^6.0.2",
+    "vue-tsc": "^3.2.6"
+  }
+}

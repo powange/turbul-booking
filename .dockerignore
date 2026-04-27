@@ -1,0 +1,16 @@
+node_modules
+.nuxt
+.output
+.data
+.nitro
+.cache
+dist
+.git
+.github
+.idea
+.vscode
+.claude
+*.log
+.env
+.env.*
+!.env.example

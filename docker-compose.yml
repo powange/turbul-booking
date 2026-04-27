@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: turbul-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-turbul}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-turbul}
+      POSTGRES_DB: ${POSTGRES_DB:-turbul_booking}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-turbul} -d ${POSTGRES_DB:-turbul_booking}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: turbul-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-turbul}:${POSTGRES_PASSWORD:-turbul}@postgres:5432/${POSTGRES_DB:-turbul_booking}?schema=public
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      NUXT_PUBLIC_APP_URL: ${NUXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NUXT_PUBLIC_MAP_DEFAULT_LAT: ${NUXT_PUBLIC_MAP_DEFAULT_LAT:-43.7828848}
+      NUXT_PUBLIC_MAP_DEFAULT_LNG: ${NUXT_PUBLIC_MAP_DEFAULT_LNG:-4.3543537}
+      NUXT_PUBLIC_MAP_DEFAULT_ZOOM: ${NUXT_PUBLIC_MAP_DEFAULT_ZOOM:-19}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    command: sh -c "npx prisma migrate deploy && node .output/server/index.mjs"
+
+volumes:
+  postgres_data:

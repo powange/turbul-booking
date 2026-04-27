@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { Bed, Caravan, Guest } from '~~/shared/types'
+import type { Caravan, Guest } from '~~/shared/types'
 import { addDaysIso } from '~/utils/dates'
 
 const props = defineProps<{
@@ -19,20 +19,10 @@ const emit = defineEmits<{
 const toast = useToast()
 const { search, create: createGuest } = useGuests()
 
-const allBeds = computed<Array<Bed & { caravanName: string }>>(() =>
-  props.caravans.flatMap(c => c.beds.map(b => ({ ...b, caravanName: c.name })))
-)
-
-const bedOptions = computed(() =>
-  allBeds.value.map(b => ({
-    label: `${b.caravanName} — ${b.label} (${b.capacity}p)`,
-    value: b.id
-  }))
-)
-
 type Mode = 'existing' | 'new'
 
 const state = reactive<{
+  caravanId: string
   bedId: string
   from: string
   to: string
@@ -40,12 +30,47 @@ const state = reactive<{
   guestId: string | null
   guest: { firstName: string, lastName: string, email: string, phone: string }
 }>({
+  caravanId: '',
   bedId: '',
   from: '',
   to: '',
   mode: 'existing',
   guestId: null,
   guest: { firstName: '', lastName: '', email: '', phone: '' }
+})
+
+const caravanOptions = computed(() =>
+  [...props.caravans]
+    .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+    .map(c => ({ label: c.name, value: c.id }))
+)
+
+const selectedCaravan = computed(() =>
+  props.caravans.find(c => c.id === state.caravanId) ?? null
+)
+
+const bedOptions = computed(() =>
+  (selectedCaravan.value?.beds ?? []).map(b => ({
+    label: `${b.label} (${b.capacity}p)`,
+    value: b.id
+  }))
+)
+
+watch(() => state.caravanId, (caravanId) => {
+  const caravan = props.caravans.find(c => c.id === caravanId)
+  if (!caravan) {
+    state.bedId = ''
+    return
+  }
+  // Si la caravane n'a qu'un seul lit, on le sélectionne d'office
+  if (caravan.beds.length === 1) {
+    state.bedId = caravan.beds[0]!.id
+    return
+  }
+  // Si le lit courant n'appartient pas à la nouvelle caravane, on le réinitialise
+  if (!caravan.beds.some(b => b.id === state.bedId)) {
+    state.bedId = ''
+  }
 })
 
 const guestSearchTerm = ref('')
@@ -69,7 +94,14 @@ function onSearchInput(v: string) {
 watch(() => props.open, async (open) => {
   if (!open) return
   // Reset + apply presets
-  state.bedId = props.presetBedId ?? ''
+  if (props.presetBedId) {
+    const owner = props.caravans.find(c => c.beds.some(b => b.id === props.presetBedId))
+    state.caravanId = owner?.id ?? ''
+    state.bedId = props.presetBedId
+  } else {
+    state.caravanId = ''
+    state.bedId = ''
+  }
   state.from = props.presetFrom ?? ''
   state.to = props.presetTo ?? (props.presetFrom ? addDaysIso(props.presetFrom, 1) : '')
   state.mode = 'existing'
@@ -160,14 +192,25 @@ const guestOptions = computed(() =>
   >
     <template #body>
       <div class="space-y-4">
-        <UFormField label="Lit" required>
-          <USelect
-            v-model="state.bedId"
-            :items="bedOptions"
-            placeholder="Sélectionner un lit"
-            class="w-full"
-          />
-        </UFormField>
+        <div class="grid grid-cols-2 gap-3">
+          <UFormField label="Caravane" required>
+            <USelect
+              v-model="state.caravanId"
+              :items="caravanOptions"
+              placeholder="Sélectionner"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField label="Lit" required>
+            <USelect
+              v-model="state.bedId"
+              :items="bedOptions"
+              :disabled="!state.caravanId || bedOptions.length <= 1"
+              :placeholder="state.caravanId ? 'Sélectionner' : '—'"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
 
         <div class="grid grid-cols-2 gap-3">
           <UFormField label="Arrivée" required>

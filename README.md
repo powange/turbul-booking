@@ -21,22 +21,41 @@ Stack : **Nuxt 4** · **PostgreSQL** · **Prisma** · **better-auth** · **Nuxt 
 
 ## Démarrage rapide — développement local
 
-```bash
-# 1. Installer les dépendances
-npm install
+Deux options selon vos préférences.
 
-# 2. Copier le .env (mot de passe BETTER_AUTH_SECRET à changer pour la prod)
+### Option A — Node sur le poste, Postgres en Docker (HMR le plus rapide)
+
+```bash
+npm install
 cp .env.example .env
 
-# 3. Lancer PostgreSQL en local (port 5432)
+# PostgreSQL seul (port 5432)
 docker compose -f docker-compose.dev.yml up -d
 
-# 4. Appliquer les migrations Prisma
 npm run db:migrate
-
-# 5. Lancer le serveur de développement
 npm run dev
 ```
+
+### Option B — Tout en Docker (zéro Node sur le poste)
+
+```bash
+# Lance PostgreSQL + Nuxt dev (HMR activé) dans des conteneurs
+docker compose -f docker-compose.dev.yml --profile full up -d
+
+# Suivre les logs (premier démarrage : compilation Nitro/Vite)
+docker compose -f docker-compose.dev.yml logs -f app-dev
+```
+
+Le code source est bind-monté → toute modification d'un fichier Vue / TS déclenche le HMR Vite ou la recompilation Nitro côté serveur. `node_modules` reste isolé dans un volume Docker (pas de conflit binaire hôte ↔ Linux).
+
+**Quand rebuilder l'image dev ?** Uniquement après modification du `package.json` :
+
+```bash
+docker compose -f docker-compose.dev.yml --profile full build app-dev
+docker compose -f docker-compose.dev.yml --profile full up -d
+```
+
+---
 
 L'application est accessible sur http://localhost:3000.
 

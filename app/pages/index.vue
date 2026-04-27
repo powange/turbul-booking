@@ -13,6 +13,45 @@ const newCaravanName = ref('')
 
 const selectedCaravan = computed(() => caravans.value.find(c => c.id === selectedId.value) ?? null)
 
+// Snapshot pour pouvoir restaurer si l'utilisateur ferme le panneau sans
+// avoir cliqué sur "Enregistrer" (l'aperçu live a modifié l'objet en place).
+let previewSnapshot: { rotation: number, width: number, length: number, hasElectricity: boolean } | null = null
+let previewDirty = false
+
+watch(selectedId, async (newId, oldId) => {
+  // Si on ferme un panneau qui avait un aperçu non sauvegardé, on resync depuis le serveur
+  if (oldId && previewDirty) {
+    await refresh()
+  }
+  previewDirty = false
+  if (newId) {
+    const c = caravans.value.find(c => c.id === newId)
+    previewSnapshot = c
+      ? { rotation: c.rotation, width: c.width, length: c.length, hasElectricity: c.hasElectricity }
+      : null
+  } else {
+    previewSnapshot = null
+  }
+})
+
+function onPreview(p: { rotation: number, width: number, length: number, hasElectricity: boolean }) {
+  const c = selectedCaravan.value
+  if (!c) return
+  // Pas de mutation tant qu'on est encore aux valeurs initiales (évite le watcher initial)
+  if (
+    previewSnapshot
+    && p.rotation === previewSnapshot.rotation
+    && p.width === previewSnapshot.width
+    && p.length === previewSnapshot.length
+    && p.hasElectricity === previewSnapshot.hasElectricity
+  ) return
+  c.rotation = p.rotation
+  c.width = p.width
+  c.length = p.length
+  c.hasElectricity = p.hasElectricity
+  previewDirty = true
+}
+
 const toast = useToast()
 
 await refresh()
@@ -134,6 +173,8 @@ async function placeCaravanAt(lat: number, lng: number) {
           :caravan="selectedCaravan"
           :can-edit="canEdit"
           @close="selectedId = null"
+          @preview="onPreview"
+          @saved="previewDirty = false"
         />
       </template>
     </USlideover>

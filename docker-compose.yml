@@ -7,8 +7,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-turbul}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-turbul}
       POSTGRES_DB: ${POSTGRES_DB:-turbul_booking}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+#    ports:
+#      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -34,8 +34,8 @@ services:
       NUXT_PUBLIC_MAP_DEFAULT_LAT: ${NUXT_PUBLIC_MAP_DEFAULT_LAT:-43.7828848}
       NUXT_PUBLIC_MAP_DEFAULT_LNG: ${NUXT_PUBLIC_MAP_DEFAULT_LNG:-4.3543537}
       NUXT_PUBLIC_MAP_DEFAULT_ZOOM: ${NUXT_PUBLIC_MAP_DEFAULT_ZOOM:-19}
-    ports:
-      - "${APP_PORT:-3000}:3000"
+#    ports:
+#      - "${APP_PORT:-3000}:3000"
     command: sh -c "npx prisma migrate deploy && node .output/server/index.mjs"
 
 volumes:

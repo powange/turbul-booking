@@ -1,0 +1,25 @@
+# Image de DÉVELOPPEMENT avec hot reload (HMR Vite/Nuxt + WebSocket Nitro)
+# Utilisée uniquement par docker-compose.dev.yml (profil "full").
+FROM node:22-alpine
+WORKDIR /app
+RUN apk add --no-cache openssl
+
+# Installation des dépendances dans l'image (le code source sera ensuite
+# bind-monté ; node_modules reste isolé dans un volume anonyme côté compose).
+COPY package.json package-lock.json ./
+COPY prisma ./prisma
+RUN npm install --no-audit --no-fund
+
+# Le code est ajouté ici juste pour que `nuxt prepare` (postinstall) ait
+# tout ce qu'il faut. À l'exécution, le bind mount le remplacera.
+COPY . .
+
+ENV NITRO_HOST=0.0.0.0
+ENV NITRO_PORT=3000
+# Polling pour fiabiliser le HMR via volume Docker
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+
+EXPOSE 3000
+
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev -- --host 0.0.0.0"]

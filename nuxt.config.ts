@@ -19,6 +19,21 @@ export default defineNuxtConfig({
     }
   },
 
+  // Polling activé via CHOKIDAR_USEPOLLING — utile dans le conteneur de dev
+  // (sinon Vite ne voit pas certaines modifications de fichiers via bind mount).
+  vite: {
+    server: {
+      watch: process.env.CHOKIDAR_USEPOLLING === 'true'
+        ? { usePolling: true, interval: 500 }
+        : undefined
+    },
+    // Pré-bundle pour éviter qu'un import CJS dynamique (leaflet) ne déclenche
+    // un re-optimize + reload de la page côté client.
+    optimizeDeps: {
+      include: ['leaflet', 'better-auth/vue', 'better-auth/client/plugins']
+    }
+  },
+
   runtimeConfig: {
     // server-only
     databaseUrl: process.env.DATABASE_URL,

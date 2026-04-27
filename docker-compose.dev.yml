@@ -17,5 +17,40 @@ services:
       timeout: 5s
       retries: 10
 
+  # Service "app-dev" — uniquement avec `--profile full`
+  # Usage : docker compose -f docker-compose.dev.yml --profile full up -d
+  app-dev:
+    profiles: [full]
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: turbul-app-dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://turbul:turbul@postgres:5432/turbul_booking?schema=public
+      BETTER_AUTH_SECRET: dev-secret-not-for-production-change-me
+      BETTER_AUTH_URL: http://localhost:3000
+      NUXT_PUBLIC_APP_URL: http://localhost:3000
+      NUXT_PUBLIC_MAP_DEFAULT_LAT: "43.7828848"
+      NUXT_PUBLIC_MAP_DEFAULT_LNG: "4.3543537"
+      NUXT_PUBLIC_MAP_DEFAULT_ZOOM: "19"
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      # Code source bind-monté pour que les changements déclenchent le HMR
+      - .:/app
+      # Volumes anonymes : node_modules et caches restent dans le conteneur
+      # (évite les conflits binaires hôte ↔ Linux Alpine)
+      - /app/node_modules
+      - /app/.nuxt
+      - /app/.output
+      - /app/.data
+      - /app/.cache
+
 volumes:
   postgres_dev_data:

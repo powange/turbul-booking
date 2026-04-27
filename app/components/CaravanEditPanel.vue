@@ -8,6 +8,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
+  preview: [data: { rotation: number, width: number, length: number, hasElectricity: boolean }]
+  saved: []
 }>()
 
 const toast = useToast()
@@ -29,19 +31,86 @@ watch(() => props.caravan.id, () => {
   form.hasElectricity = props.caravan.hasElectricity
 })
 
-const saving = ref(false)
-async function save() {
-  saving.value = true
+// Auto-save avec débounce pour les champs visuels (rotation, dimensions, élec.).
+// Aperçu instantané sur la carte via emit('preview'), persistance ~400ms après
+// la dernière modification — pas besoin de bouton Enregistrer pour ces champs.
+const dimsDirty = ref(false)
+let dimsSaveTimer: ReturnType<typeof setTimeout> | null = null
+let initializing = true
+
+watch(
+  [() => form.rotation, () => form.width, () => form.length, () => form.hasElectricity],
+  () => {
+    emit('preview', {
+      rotation: form.rotation,
+      width: form.width,
+      length: form.length,
+      hasElectricity: form.hasElectricity
+    })
+    if (initializing) return
+    if (!canEditNow()) return
+    dimsDirty.value = true
+    if (dimsSaveTimer) clearTimeout(dimsSaveTimer)
+    dimsSaveTimer = setTimeout(saveDimensions, 400)
+  }
+)
+
+// Active l'auto-save après le premier tick (évite le watcher initial / les
+// re-init du form lors d'un changement de caravane sélectionnée).
+nextTick(() => { initializing = false })
+
+watch(() => props.caravan.id, () => {
+  initializing = true
+  nextTick(() => { initializing = false })
+})
+
+function canEditNow() {
+  return props.canEdit
+}
+
+async function saveDimensions() {
   try {
     await $fetch(`/api/caravans/${props.caravan.id}`, {
       method: 'PATCH',
-      body: form
+      body: {
+        rotation: form.rotation,
+        width: form.width,
+        length: form.length,
+        hasElectricity: form.hasElectricity
+      }
     })
-    toast.add({ title: 'Caravane mise à jour', color: 'success' })
+    dimsDirty.value = false
+    emit('saved')
   } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+    toast.add({
+      title: 'Erreur enregistrement',
+      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      color: 'error'
+    })
+  }
+}
+
+// Enregistrement explicite du nom (changement caractère-par-caractère ne doit
+// pas déclencher un PATCH à chaque frappe).
+const savingName = ref(false)
+async function saveName() {
+  if (form.name === props.caravan.name) return
+  savingName.value = true
+  try {
+    await $fetch(`/api/caravans/${props.caravan.id}`, {
+      method: 'PATCH',
+      body: { name: form.name }
+    })
+    toast.add({ title: 'Nom enregistré', color: 'success' })
+    emit('saved')
+  } catch (err: any) {
+    toast.add({
+      title: 'Erreur',
+      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      color: 'error'
+    })
   } finally {
-    saving.value = false
+    savingName.value = false
   }
 }
 
@@ -127,7 +196,13 @@ const capacityOptions = [
         </legend>
 
         <UFormField label="Nom">
-          <UInput v-model="form.name" class="w-full" />
+          <UInput
+            v-model="form.name"
+            class="w-full"
+            :loading="savingName"
+            @blur="saveName"
+            @keydown.enter="saveName"
+          />
         </UFormField>
 
         <div class="grid grid-cols-2 gap-3">
@@ -152,15 +227,19 @@ const capacityOptions = [
 
         <USwitch v-model="form.hasElectricity" label="Raccordée à l'électricité" />
 
-        <UButton
-          v-if="canEdit"
-          block
-          icon="i-lucide-save"
-          :loading="saving"
-          @click="save"
-        >
-          Enregistrer
-        </UButton>
+        <p v-if="canEdit" class="text-xs text-muted flex items-center gap-1.5">
+          <UIcon
+            v-if="dimsDirty"
+            name="i-lucide-loader-circle"
+            class="animate-spin"
+          />
+          <UIcon
+            v-else
+            name="i-lucide-check"
+            class="text-success"
+          />
+          {{ dimsDirty ? 'Enregistrement…' : 'Modifications enregistrées automatiquement' }}
+        </p>
       </fieldset>
 
       <USeparator />

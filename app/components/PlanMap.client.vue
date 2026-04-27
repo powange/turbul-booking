@@ -315,12 +315,17 @@ onMounted(() => {
     if (rect.width > 0 && rect.height > 0) initMap()
   }
 
-  // Tentative synchrone : couvre la nav client-side (container déjà mesuré)
+  // Tentatives échelonnées pour couvrir tous les timings de layout :
+  // - sync : nav client-side, container déjà mesuré
+  // - RAF : après le premier paint
+  // - 200ms : après les transitions Nuxt/UApp
   tryInit()
+  requestAnimationFrame(tryInit)
+  setTimeout(tryInit, 200)
 
   // Observer : initialise dès que le container reçoit une taille valide
   // (cas du hard reload où la mise en page n'est pas finie au mount), puis
-  // invalideSize sur les resizes ultérieurs.
+  // invalidateSize sur les resizes ultérieurs.
   resizeObserver = new ResizeObserver(() => {
     if (!map) tryInit()
     else map.invalidateSize()

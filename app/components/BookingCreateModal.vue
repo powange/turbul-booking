@@ -98,6 +98,12 @@ watch(() => props.open, async (open) => {
     const owner = props.caravans.find(c => c.beds.some(b => b.id === props.presetBedId))
     state.caravanId = owner?.id ?? ''
     state.bedId = props.presetBedId
+  } else if (props.caravans.length === 1) {
+    // Une seule caravane fournie (ex. depuis le panneau d'une caravane sur le
+    // plan) : on la sélectionne d'office. Le watcher sur caravanId
+    // sélectionnera ensuite le seul lit s'il n'y en a qu'un.
+    state.caravanId = props.caravans[0]!.id
+    state.bedId = ''
   } else {
     state.caravanId = ''
     state.bedId = ''

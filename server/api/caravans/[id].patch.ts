@@ -15,11 +15,17 @@ const schema = z.object({
 }).refine(d => Object.keys(d).length > 0, { message: 'Aucun champ à mettre à jour' })
 
 export default defineEventHandler(async (event) => {
-  const user = await requireRole(event, 'ADMIN')
   const id = getRouterParam(event, 'id')
   if (!id) throw createError({ statusCode: 400, statusMessage: 'id manquant' })
 
   const body = await readValidatedBody(event, schema.parse)
+
+  // hasElectricity est éditable par les MANAGER depuis le panneau de
+  // consultation. Les autres champs (position, dimensions, nom…) restent
+  // réservés aux ADMIN.
+  const keys = Object.keys(body)
+  const electricityOnly = keys.length === 1 && keys[0] === 'hasElectricity'
+  const user = await requireRole(event, electricityOnly ? 'MANAGER' : 'ADMIN')
 
   const existing = await prisma.caravan.findFirst({ where: { id, deletedAt: null } })
   if (!existing) throw createError({ statusCode: 404, statusMessage: 'Caravane introuvable' })

@@ -5,13 +5,15 @@ import { formatFullDate, todayIso } from '~/utils/dates'
 const props = defineProps<{
   caravan: Caravan
   bookings: Booking[]
-  canCreate: boolean
+  canManage: boolean
 }>()
 
 const emit = defineEmits<{
   close: []
   addBooking: []
 }>()
+
+const toast = useToast()
 
 const bedIds = computed(() => new Set(props.caravan.beds.map(b => b.id)))
 
@@ -30,6 +32,39 @@ const groupedBookings = computed(() => {
 const totalUpcoming = computed(() =>
   groupedBookings.value.reduce((s, g) => s + g.bookings.length, 0)
 )
+
+// Switch "Raccordée à l'électricité" — éditable MANAGER+ via PATCH dédié
+// (le serveur autorise MANAGER quand seul ce champ est dans le body).
+const electricity = ref(props.caravan.hasElectricity)
+watch(() => props.caravan.id, () => { electricity.value = props.caravan.hasElectricity })
+watch(() => props.caravan.hasElectricity, (v) => { electricity.value = v })
+
+const savingElectricity = ref(false)
+let electricityTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(electricity, (v) => {
+  if (!props.canManage) return
+  if (v === props.caravan.hasElectricity) return
+  if (electricityTimer) clearTimeout(electricityTimer)
+  electricityTimer = setTimeout(async () => {
+    savingElectricity.value = true
+    try {
+      await $fetch(`/api/caravans/${props.caravan.id}`, {
+        method: 'PATCH',
+        body: { hasElectricity: v }
+      })
+    } catch (err: any) {
+      electricity.value = props.caravan.hasElectricity
+      toast.add({
+        title: 'Erreur',
+        description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+        color: 'error'
+      })
+    } finally {
+      savingElectricity.value = false
+    }
+  }, 250)
+})
 </script>
 
 <template>
@@ -43,6 +78,22 @@ const totalUpcoming = computed(() =>
         </p>
       </div>
       <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="emit('close')" />
+    </div>
+
+    <div class="px-4 py-3 border-b border-default flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-sm">
+        <UIcon name="i-lucide-zap" class="text-muted" />
+        <span>Raccordée à l'électricité</span>
+        <UIcon
+          v-if="savingElectricity"
+          name="i-lucide-loader-circle"
+          class="animate-spin text-muted"
+        />
+      </div>
+      <USwitch
+        v-model="electricity"
+        :disabled="!canManage"
+      />
     </div>
 
     <div class="flex-1 overflow-y-auto px-4 py-4 space-y-5">
@@ -81,7 +132,7 @@ const totalUpcoming = computed(() =>
       </section>
     </div>
 
-    <div v-if="canCreate && caravan.beds.length > 0" class="px-4 py-3 border-t border-default">
+    <div v-if="canManage && caravan.beds.length > 0" class="px-4 py-3 border-t border-default">
       <UButton
         block
         icon="i-lucide-plus"

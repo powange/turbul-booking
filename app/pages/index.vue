@@ -201,29 +201,22 @@ async function updateZonePoints(id: string, points: Array<[number, number]>) {
 
 <template>
   <div class="relative h-[calc(100vh-var(--ui-header-height,64px))] w-full">
-    <ClientOnly>
-      <PlanMap
-        :caravans="caravans"
-        :zones="zones"
-        :selected-id="selectedId"
-        :selected-zone-id="selectedZoneId"
-        :can-edit="canEdit"
-        :place-mode="placeMode"
-        :zone-draw-mode="zoneDrawMode"
-        :draft-zone-color="draftZoneColor"
-        @select="selectedId = $event"
-        @select-zone="selectedZoneId = $event"
-        @move="moveCaravan"
-        @place-at="placeCaravanAt"
-        @zone-created="createZone"
-        @zone-edited="updateZonePoints"
-      />
-      <template #fallback>
-        <div class="h-full flex items-center justify-center text-muted">
-          Chargement du plan...
-        </div>
-      </template>
-    </ClientOnly>
+    <PlanMap
+      :caravans="caravans"
+      :zones="zones"
+      :selected-id="selectedId"
+      :selected-zone-id="selectedZoneId"
+      :can-edit="canEdit"
+      :place-mode="placeMode"
+      :zone-draw-mode="zoneDrawMode"
+      :draft-zone-color="draftZoneColor"
+      @select="selectedId = $event"
+      @select-zone="selectedZoneId = $event"
+      @move="moveCaravan"
+      @place-at="placeCaravanAt"
+      @zone-created="createZone"
+      @zone-edited="updateZonePoints"
+    />
 
     <!-- Barre admin : switch mode édition (toujours visible pour ADMIN) puis
          actions de création quand le mode édition est activé. -->
@@ -322,7 +315,7 @@ async function updateZonePoints(id: string, points: Array<[number, number]>) {
           v-else-if="selectedCaravan"
           :caravan="selectedCaravan"
           :bookings="bookings"
-          :can-create="canCreateBooking"
+          :can-manage="canCreateBooking"
           @close="selectedId = null"
           @add-booking="openBookingFromCaravan"
         />

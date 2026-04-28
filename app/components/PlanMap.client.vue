@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import '@geoman-io/leaflet-geoman-free'
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 import { latLngsToPoints } from '~/utils/leafletGeo'
+import { caravanCorners } from '~/utils/geo'
 import type { Booking, Caravan, Zone, Wall } from '~~/shared/types'
 
 const props = defineProps<{
@@ -156,7 +157,55 @@ watch(() => props.placeMode, (mode) => {
   mapEl.value.style.cursor = mode ? 'crosshair' : ''
 })
 
+// === Mode impression ===
+// On utilise `matchMedia('print')` plutôt que `beforeprint` parce que ce
+// dernier fire AVANT que la CSS print soit appliquée — Leaflet calculerait
+// alors `fitBounds` avec la taille écran, pas avec la taille A4 paysage.
+// matchMedia change à l'instant où le viewport print est actif, donc
+// `invalidateSize` + `fitBounds` voient la bonne géométrie.
+let savedView: { center: L.LatLng, zoom: number } | null = null
+let printMql: MediaQueryList | null = null
+
+function computeContentBounds(): L.LatLngBoundsExpression | null {
+  const points: L.LatLngTuple[] = []
+  for (const c of props.caravans) {
+    for (const corner of caravanCorners(c)) points.push(corner as L.LatLngTuple)
+  }
+  for (const z of props.zones) {
+    for (const p of z.points) points.push(p)
+  }
+  for (const w of props.walls) {
+    for (const p of w.points) points.push(p)
+  }
+  return points.length ? points : null
+}
+
+function onPrintChange(e: MediaQueryListEvent) {
+  if (!map) return
+  if (e.matches) {
+    // Entrée en mode impression : sauve, recadre.
+    savedView = { center: map.getCenter(), zoom: map.getZoom() }
+    map.invalidateSize({ animate: false })
+    const bounds = computeContentBounds()
+    if (bounds) map.fitBounds(bounds, { padding: [20, 20], animate: false })
+  } else if (savedView) {
+    // Sortie : restaure la vue précédente.
+    map.setView(savedView.center, savedView.zoom, { animate: false })
+    savedView = null
+    map.invalidateSize({ animate: false })
+  }
+}
+
+if (import.meta.client) {
+  printMql = window.matchMedia('print')
+  printMql.addEventListener('change', onPrintChange)
+}
+
 onBeforeUnmount(() => {
+  if (printMql) {
+    printMql.removeEventListener('change', onPrintChange)
+    printMql = null
+  }
   resizeObserver?.disconnect()
   resizeObserver = null
   caravansLayer.detach()

@@ -189,6 +189,10 @@ function openBookingFromCaravan() {
   bookingModalOpen.value = true
 }
 
+function printPlan() {
+  if (import.meta.client) window.print()
+}
+
 async function moveCaravan(id: string, lat: number, lng: number) {
   try {
     await $fetch(`/api/caravans/${id}`, { method: 'PATCH', body: { lat, lng } })
@@ -281,7 +285,16 @@ async function updateWallPoints(id: string, points: Array<[number, number]>) {
 </script>
 
 <template>
-  <div class="relative h-[calc(100dvh-4rem)] w-full">
+  <div class="relative h-[calc(100dvh-4rem)] w-full plan-map-print-root">
+    <UButton
+      variant="outline"
+      size="sm"
+      icon="i-lucide-printer"
+      class="absolute top-3 left-3 z-1000 print:hidden bg-default/90 backdrop-blur"
+      @click="printPlan"
+    >
+      Imprimer / PDF
+    </UButton>
     <PlanMap
       :caravans="caravans"
       :zones="zones"

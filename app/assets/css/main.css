@@ -124,4 +124,24 @@ h1, h2, h3 {
     /* Pas de surlignage du jour courant (ring Tailwind) sur le PDF. */
     box-shadow: none !important;
   }
+
+  /* === Plan (page d'accueil) === */
+  /* Pas de fond carto : on imprime juste les caravanes / zones / murs
+     sur fond blanc, pour économiser l'encre et avoir un rendu schématique. */
+  .leaflet-tile-pane,
+  /* Icônes ⚡/🛏️ dans les pins masquées sur le print à la demande. */
+  .caravan-pin-icon {
+    display: none !important;
+  }
+
+  .leaflet-container {
+    background: white !important;
+  }
+
+  /* Wrapper du plan en plein écran A4 paysage (override du
+     calc(100dvh - 4rem) + de min-height: 0 hérité de UMain). */
+  .plan-map-print-root {
+    height: 100vh !important;
+    width: 100vw !important;
+  }
 }

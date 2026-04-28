@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { Booking, Caravan, Bed } from '~~/shared/types'
+import type { Booking, Caravan, Bed, CaravanUnavailability } from '~~/shared/types'
 import { formatDayShort, formatDayNum, isWeekend, isToday } from '~/utils/dates'
 
 const props = defineProps<{
   caravans: Caravan[]
   bookings: Booking[]
+  unavailabilities: CaravanUnavailability[]
   dates: string[]
 }>()
 
@@ -26,6 +27,23 @@ const bookingsByCell = computed(() => {
 
 function bookingsFor(bedId: string, date: string): Booking[] {
   return bookingsByCell.value.get(`${bedId}|${date}`) ?? []
+}
+
+// Pour chaque caravane, on trie ses indispos et on regarde si une couvre la date.
+const unavByCaravan = computed(() => {
+  const map = new Map<string, CaravanUnavailability[]>()
+  for (const u of props.unavailabilities) {
+    const arr = map.get(u.caravanId)
+    if (arr) arr.push(u)
+    else map.set(u.caravanId, [u])
+  }
+  return map
+})
+
+function unavailabilityFor(caravanId: string, date: string): CaravanUnavailability | null {
+  const list = unavByCaravan.value.get(caravanId)
+  if (!list) return null
+  return list.find(u => u.from <= date && u.to > date) ?? null
 }
 
 function bedRowClass(bookings: Booking[], capacity: number) {
@@ -87,31 +105,63 @@ function bedRowClass(bookings: Booking[], capacity: number) {
               {{ bed.label }}
             </td>
             <td class="text-center px-2 py-2 text-muted">{{ bed.capacity }}</td>
-            <td
-              v-for="d in dates"
-              :key="d"
-              class="px-1 py-1 cursor-pointer text-center text-xs border-r border-default last:border-r-0"
-              :class="bedRowClass(bookingsFor(bed.id, d), bed.capacity)"
-              @click="emit('cellClick', caravan, bed, d)"
-            >
-              <div v-if="bookingsFor(bed.id, d).length === 0" class="text-muted">—</div>
-              <div v-else class="space-y-0.5">
-                <div
-                  v-for="b in bookingsFor(bed.id, d)"
-                  :key="b.id"
-                  class="truncate font-medium"
-                  :title="`${b.guest?.firstName} ${b.guest?.lastName}`"
-                >
-                  {{ b.guest?.firstName }} {{ b.guest?.lastName.charAt(0) }}.
+            <template v-for="d in dates" :key="d">
+              <td
+                v-if="unavailabilityFor(caravan.id, d)"
+                class="unav-cell px-1 py-1 cursor-pointer text-center border-r border-default last:border-r-0"
+                :title="unavailabilityFor(caravan.id, d)?.reason || 'Caravane indisponible'"
+                @click="emit('cellClick', caravan, bed, d)"
+              >
+                <UIcon name="i-lucide-ban" class="size-5 mx-auto text-error" />
+              </td>
+              <td
+                v-else
+                class="px-1 py-1 cursor-pointer text-center text-xs border-r border-default last:border-r-0"
+                :class="bedRowClass(bookingsFor(bed.id, d), bed.capacity)"
+                @click="emit('cellClick', caravan, bed, d)"
+              >
+                <div v-if="bookingsFor(bed.id, d).length === 0" class="text-muted">—</div>
+                <div v-else class="space-y-0.5">
+                  <div
+                    v-for="b in bookingsFor(bed.id, d)"
+                    :key="b.id"
+                    class="truncate font-medium"
+                    :title="`${b.guest?.firstName} ${b.guest?.lastName}`"
+                  >
+                    {{ b.guest?.firstName }} {{ b.guest?.lastName.charAt(0) }}.
+                  </div>
+                  <div v-if="bookingsFor(bed.id, d).length < bed.capacity" class="text-[10px] text-muted">
+                    +{{ bed.capacity - bookingsFor(bed.id, d).length }} libre{{ bed.capacity - bookingsFor(bed.id, d).length > 1 ? 's' : '' }}
+                  </div>
                 </div>
-                <div v-if="bookingsFor(bed.id, d).length < bed.capacity" class="text-[10px] text-muted">
-                  +{{ bed.capacity - bookingsFor(bed.id, d).length }} libre{{ bed.capacity - bookingsFor(bed.id, d).length > 1 ? 's' : '' }}
-                </div>
-              </div>
-            </td>
+              </td>
+            </template>
           </tr>
         </template>
       </tbody>
     </table>
   </div>
 </template>
+
+<style scoped>
+/* Cellule d'indisponibilité : motif de hachures diagonales pour distinguer
+   visuellement d'une cellule libre. */
+.unav-cell {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--ui-bg-muted, #e5e7eb) 0,
+    var(--ui-bg-muted, #e5e7eb) 6px,
+    var(--ui-bg-elevated, #f3f4f6) 6px,
+    var(--ui-bg-elevated, #f3f4f6) 12px
+  );
+}
+.dark .unav-cell {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.04) 0,
+    rgba(255, 255, 255, 0.04) 6px,
+    rgba(255, 255, 255, 0.08) 6px,
+    rgba(255, 255, 255, 0.08) 12px
+  );
+}
+</style>

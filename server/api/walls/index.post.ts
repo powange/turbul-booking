@@ -10,34 +10,32 @@ const pointSchema = z.tuple([
 ])
 
 const schema = z.object({
-  name: z.string().min(1).max(120),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Couleur invalide (#rrggbb attendu)'),
-  filled: z.boolean().optional(),
-  points: z.array(pointSchema).min(3, 'Au moins 3 sommets requis')
+  thickness: z.number().min(1).max(20),
+  points: z.array(pointSchema).min(2, 'Au moins 2 sommets requis')
 })
 
 export default defineEventHandler(async (event) => {
   const user = await requireRole(event, 'ADMIN')
   const body = await readValidatedBody(event, schema.parse)
 
-  const zone = await prisma.zone.create({
+  const wall = await prisma.wall.create({
     data: {
-      name: body.name,
       color: body.color,
-      filled: body.filled ?? true,
+      thickness: body.thickness,
       points: body.points
     }
   })
 
   await logAudit({
     userId: user.id,
-    action: 'ZONE_CREATE',
-    entityType: 'Zone',
-    entityId: zone.id,
+    action: 'WALL_CREATE',
+    entityType: 'Wall',
+    entityId: wall.id,
     payload: body
   })
 
-  broadcast('zone:created', zone)
+  broadcast('wall:created', wall)
 
-  return zone
+  return wall
 })

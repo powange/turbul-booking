@@ -33,6 +33,7 @@ model User {
   sessions       Session[]
   accounts       Account[]
   bookingsCreated Booking[] @relation("BookingCreatedBy")
+  unavailabilitiesCreated CaravanUnavailability[] @relation("UnavailabilityCreatedBy")
   auditLogs       AuditLog[]
 }
 
@@ -97,17 +98,37 @@ model Caravan {
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
-  beds Bed[]
+  beds             Bed[]
+  unavailabilities CaravanUnavailability[]
 
   @@index([deletedAt])
 }
 
+// Période durant laquelle la caravane est indisponible (toutes ses lits sont
+// bloqués). `to` est exclusif : 1 nuit bloquée = `to = from + 1 jour`.
+model CaravanUnavailability {
+  id          String   @id @default(cuid())
+  caravanId   String
+  from        DateTime @db.Date
+  to          DateTime @db.Date
+  reason      String?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  caravan   Caravan @relation(fields: [caravanId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("UnavailabilityCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([caravanId, from, to])
+  @@index([from, to])
+}
+
 model Bed {
-  id        String @id @default(cuid())
-  caravanId String
-  label     String
-  capacity  Int    // 1, 2 ou 3
-  position  Int    @default(0) // ordre d'affichage dans la caravane
+  id            String  @id @default(cuid())
+  caravanId     String
+  label         String
+  capacity      Int     // 1, 2 ou 3
+  position      Int     @default(0) // ordre d'affichage dans la caravane
+  hasCleanLinen Boolean @default(false)
 
   caravan  Caravan   @relation(fields: [caravanId], references: [id], onDelete: Cascade)
   bookings Booking[]
@@ -155,7 +176,18 @@ model Zone {
   id        String   @id @default(cuid())
   name      String
   color     String
+  filled    Boolean  @default(true)
   points    Json     // [[lat, lng], [lat, lng], ...] — au moins 3 sommets
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Murs décoratifs sur le plan (polylignes libres). Purement visuel.
+model Wall {
+  id        String   @id @default(cuid())
+  color     String
+  thickness Float    @default(3)
+  points    Json     // [[lat, lng], [lat, lng], ...] — au moins 2 sommets
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

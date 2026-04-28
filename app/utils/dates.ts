@@ -63,3 +63,11 @@ export function isWeekend(iso: string): boolean {
 export function isToday(iso: string): boolean {
   return iso === todayIso()
 }
+
+// Lundi de la semaine ISO contenant la date donnée (semaine lundi → dimanche).
+export function startOfWeekMondayIso(iso: string): string {
+  const d = isoToDate(iso)
+  // getUTCDay : 0=dim, 1=lun, …, 6=sam → on veut 0 si lun, 6 si dim
+  const offset = (d.getUTCDay() + 6) % 7
+  return addDaysIso(iso, -offset)
+}

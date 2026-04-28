@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Zone" ADD COLUMN "filled" BOOLEAN NOT NULL DEFAULT true;

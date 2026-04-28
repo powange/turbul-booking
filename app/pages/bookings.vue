@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Bed, Caravan } from '~~/shared/types'
-import { addDaysIso, formatFullDate, rangeDays, todayIso } from '~/utils/dates'
+import { addDaysIso, formatFullDate, rangeDays, startOfWeekMondayIso, todayIso } from '~/utils/dates'
 
 useHead({ title: 'Réservations · Turbul Booking' })
 
@@ -9,24 +9,34 @@ const canEdit = computed(() => hasRole('MANAGER'))
 
 const { caravans, refresh: refreshCaravans, ensureRealtime: ensureCaravansRealtime } = useCaravans()
 const { bookings, fetchRange, ensureRealtime: ensureBookingsRealtime } = useBookings()
+const {
+  unavailabilities,
+  fetchRange: fetchUnavailabilitiesRange,
+  ensureRealtime: ensureUnavailabilitiesRealtime
+} = useUnavailabilities()
 
-const startIso = ref(todayIso())
-const days = ref(7)
+// Date librement choisie par l'utilisateur — la semaine affichée est déduite
+// (lundi → dimanche contenant cette date).
+const selectedIso = ref(todayIso())
 
-const fromIso = computed(() => startIso.value)
-const toIso = computed(() => addDaysIso(startIso.value, days.value))
+const fromIso = computed(() => startOfWeekMondayIso(selectedIso.value))
+const toIso = computed(() => addDaysIso(fromIso.value, 7))
 const dates = computed(() => rangeDays(fromIso.value, toIso.value))
 
 await refreshCaravans()
-await fetchRange(fromIso.value, toIso.value)
+await Promise.all([
+  fetchRange(fromIso.value, toIso.value),
+  fetchUnavailabilitiesRange(fromIso.value, toIso.value)
+])
 
 watch([fromIso, toIso], async ([f, t]) => {
-  await fetchRange(f, t)
+  await Promise.all([fetchRange(f, t), fetchUnavailabilitiesRange(f, t)])
 })
 
 onMounted(() => {
   ensureCaravansRealtime()
   ensureBookingsRealtime()
+  ensureUnavailabilitiesRealtime()
 })
 
 // Modals
@@ -66,20 +76,13 @@ function openCreateBlank() {
   createOpen.value = true
 }
 
-function shiftDays(delta: number) {
-  startIso.value = addDaysIso(startIso.value, delta)
+function shiftWeek(delta: number) {
+  selectedIso.value = addDaysIso(fromIso.value, delta * 7)
 }
 
 function goToday() {
-  startIso.value = todayIso()
+  selectedIso.value = todayIso()
 }
-
-const dayOptions = [
-  { label: '3 jours', value: 3 },
-  { label: '7 jours', value: 7 },
-  { label: '14 jours', value: 14 },
-  { label: '30 jours', value: 30 }
-]
 </script>
 
 <template>
@@ -102,19 +105,18 @@ const dayOptions = [
 
     <div class="flex flex-wrap items-center gap-2">
       <UFieldGroup>
-        <UButton icon="i-lucide-chevron-left" variant="outline" @click="shiftDays(-days)" />
+        <UButton icon="i-lucide-chevron-left" variant="outline" @click="shiftWeek(-1)" />
         <UButton variant="outline" @click="goToday">Aujourd'hui</UButton>
-        <UButton icon="i-lucide-chevron-right" variant="outline" @click="shiftDays(days)" />
+        <UButton icon="i-lucide-chevron-right" variant="outline" @click="shiftWeek(1)" />
       </UFieldGroup>
 
-      <UInput v-model="startIso" type="date" />
-
-      <USelect v-model="days" :items="dayOptions" />
+      <UInput v-model="selectedIso" type="date" />
     </div>
 
     <BookingsGrid
       :caravans="caravans"
       :bookings="bookings"
+      :unavailabilities="unavailabilities"
       :dates="dates"
       @cell-click="onCellClick"
     />

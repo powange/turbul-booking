@@ -9,7 +9,8 @@ const SECTIONS = [
   { key: 'zones', label: 'Zones' },
   { key: 'beds', label: 'Lits' },
   { key: 'guests', label: 'Hôtes' },
-  { key: 'bookings', label: 'Réservations' }
+  { key: 'bookings', label: 'Réservations' },
+  { key: 'unavailabilities', label: 'Indisponibilités' }
 ] as const
 type Section = typeof SECTIONS[number]['key']
 

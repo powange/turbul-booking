@@ -42,6 +42,24 @@ export default defineEventHandler(async (event) => {
     if (!bed) throw createError({ statusCode: 404, statusMessage: 'Lit introuvable' })
     if (bed.caravan.deletedAt) throw createError({ statusCode: 400, statusMessage: 'Caravane retirée du plan.' })
 
+    // 1b. Vérifier qu'aucune indisponibilité de la caravane ne chevauche la
+    // période demandée. (indispo.from < to ET indispo.to > from)
+    const blocking = await tx.caravanUnavailability.findFirst({
+      where: {
+        caravanId: bed.caravanId,
+        from: { lt: parseDateOnly(body.to) },
+        to: { gt: parseDateOnly(body.from) }
+      }
+    })
+    if (blocking) {
+      const fromStr = blocking.from.toISOString().slice(0, 10)
+      const toStr = blocking.to.toISOString().slice(0, 10)
+      throw createError({
+        statusCode: 409,
+        statusMessage: `Caravane indisponible du ${fromStr} au ${toStr}${blocking.reason ? ` (${blocking.reason})` : ''}.`
+      })
+    }
+
     // 2. Récupérer ou créer l'hôte
     let guestId = body.guestId
     let guestCreated = false

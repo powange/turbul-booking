@@ -26,6 +26,11 @@ export type RealtimeEvent =
   | 'zone:created'
   | 'zone:updated'
   | 'zone:deleted'
+  | 'wall:created'
+  | 'wall:updated'
+  | 'wall:deleted'
+  | 'unavailability:created'
+  | 'unavailability:deleted'
 
 export function broadcast(event: RealtimeEvent, payload: unknown) {
   const message = JSON.stringify({ event, payload })

@@ -270,6 +270,13 @@ const capacityOptions = [
               class="w-32"
               @update:model-value="(v: number) => updateBed(bed.id, { capacity: Number(v) })"
             />
+            <USwitch
+              :model-value="bed.hasCleanLinen"
+              :disabled="!canEdit"
+              size="xs"
+              title="Linge propre"
+              @update:model-value="(v: boolean) => updateBed(bed.id, { hasCleanLinen: v })"
+            />
             <UButton
               v-if="canEdit"
               icon="i-lucide-trash-2"

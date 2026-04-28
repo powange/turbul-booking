@@ -6,7 +6,8 @@ import { broadcast } from '~~/server/utils/realtime'
 
 const schema = z.object({
   label: z.string().min(1).max(60),
-  capacity: z.number().int().min(1).max(3)
+  capacity: z.number().int().min(1).max(3),
+  hasCleanLinen: z.boolean().default(false)
 })
 
 export default defineEventHandler(async (event) => {
@@ -30,6 +31,7 @@ export default defineEventHandler(async (event) => {
       caravanId,
       label: body.label,
       capacity: body.capacity,
+      hasCleanLinen: body.hasCleanLinen,
       position: nextPosition
     }
   })

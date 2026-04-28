@@ -7,15 +7,22 @@ import { broadcast } from '~~/server/utils/realtime'
 const schema = z.object({
   label: z.string().min(1).max(60).optional(),
   capacity: z.number().int().min(1).max(3).optional(),
-  position: z.number().int().min(0).optional()
+  position: z.number().int().min(0).optional(),
+  hasCleanLinen: z.boolean().optional()
 }).refine(d => Object.keys(d).length > 0, { message: 'Aucun champ à mettre à jour' })
 
 export default defineEventHandler(async (event) => {
-  const user = await requireRole(event, 'ADMIN')
   const id = getRouterParam(event, 'id')
   if (!id) throw createError({ statusCode: 400, statusMessage: 'id manquant' })
 
   const body = await readValidatedBody(event, schema.parse)
+
+  // hasCleanLinen est éditable par les MANAGER depuis le panneau de
+  // consultation (gestion quotidienne du linge). Les autres champs (label,
+  // capacity, position) restent réservés aux ADMIN.
+  const keys = Object.keys(body)
+  const linenOnly = keys.length === 1 && keys[0] === 'hasCleanLinen'
+  const user = await requireRole(event, linenOnly ? 'MANAGER' : 'ADMIN')
 
   const bed = await prisma.bed.update({
     where: { id },

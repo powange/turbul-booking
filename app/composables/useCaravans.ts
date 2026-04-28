@@ -65,5 +65,11 @@ export function useCaravans() {
     subscribePermanent(applyEvent)
   }
 
-  return { caravans, isReady, refresh, ensureRealtime }
+  // Permet de mettre à jour un lit en local sans attendre la diffusion WS
+  // (utile pour les actions optimistes type toggle linge).
+  function applyBedUpdate(bed: Bed) {
+    applyEvent('bed:updated', bed)
+  }
+
+  return { caravans, isReady, refresh, ensureRealtime, applyBedUpdate }
 }

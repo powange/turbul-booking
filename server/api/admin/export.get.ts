@@ -3,7 +3,7 @@ import { prisma } from '~~/server/utils/db'
 import { requireRole } from '~~/server/utils/session'
 import { logAudit } from '~~/server/utils/audit'
 
-const SECTIONS = ['caravans', 'zones', 'beds', 'guests', 'bookings'] as const
+const SECTIONS = ['caravans', 'zones', 'beds', 'guests', 'bookings', 'unavailabilities'] as const
 type Section = typeof SECTIONS[number]
 
 const querySchema = z.object({
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
   }
   if (requested.includes('beds')) {
     result.beds = await prisma.bed.findMany({
-      select: { id: true, caravanId: true, label: true, capacity: true, position: true }
+      select: { id: true, caravanId: true, label: true, capacity: true, position: true, hasCleanLinen: true }
     })
   }
   if (requested.includes('guests')) {
@@ -56,6 +56,16 @@ export default defineEventHandler(async (event) => {
     result.bookings = await prisma.booking.findMany({
       select: { id: true, bedId: true, guestId: true, date: true, createdById: true }
     })
+  }
+  if (requested.includes('unavailabilities')) {
+    const items = await prisma.caravanUnavailability.findMany({
+      select: { id: true, caravanId: true, from: true, to: true, reason: true, createdById: true }
+    })
+    result.unavailabilities = items.map(u => ({
+      ...u,
+      from: u.from.toISOString().slice(0, 10),
+      to: u.to.toISOString().slice(0, 10)
+    }))
   }
 
   await logAudit({

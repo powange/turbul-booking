@@ -4,26 +4,34 @@ import 'leaflet/dist/leaflet.css'
 import '@geoman-io/leaflet-geoman-free'
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 import { caravanCorners } from '~/utils/geo'
-import type { Caravan, Zone } from '~~/shared/types'
+import type { Caravan, Zone, Wall } from '~~/shared/types'
 
 const props = defineProps<{
   caravans: Caravan[]
   zones: Zone[]
+  walls: Wall[]
   selectedId: string | null
   selectedZoneId: string | null
+  selectedWallId: string | null
   canEdit: boolean
   placeMode: boolean
   zoneDrawMode: boolean
+  wallDrawMode: boolean
   draftZoneColor?: string
+  draftWallColor?: string
+  draftWallThickness?: number
 }>()
 
 const emit = defineEmits<{
   select: [id: string | null]
   selectZone: [id: string | null]
+  selectWall: [id: string | null]
   move: [id: string, lat: number, lng: number]
   placeAt: [lat: number, lng: number]
   zoneCreated: [points: Array<[number, number]>]
   zoneEdited: [id: string, points: Array<[number, number]>]
+  wallCreated: [points: Array<[number, number]>]
+  wallEdited: [id: string, points: Array<[number, number]>]
 }>()
 
 const config = useRuntimeConfig()
@@ -35,11 +43,14 @@ const polygons = new Map<string, L.Polygon>()
 const markers = new Map<string, L.Marker>()
 const zonePolygons = new Map<string, L.Polygon>()
 const ZONE_PANE = 'zonesPane'
+const wallPolylines = new Map<string, L.Polyline>()
+const WALL_PANE = 'wallsPane'
 
 // L'id de la zone actuellement éditée via Geoman. Quand non null, on ignore
 // les mises à jour de props sur cette zone pour ne pas désynchroniser les
 // poignées de sommets.
 let editingZoneId: string | null = null
+let editingWallId: string | null = null
 
 function styleFor(c: Caravan, selected: boolean) {
   return {
@@ -137,7 +148,7 @@ function zoneStyle(z: Zone) {
     color: z.color,
     weight: 2,
     fillColor: z.color,
-    fillOpacity: 0.25
+    fillOpacity: z.filled ? 0.25 : 0
   }
 }
 
@@ -145,25 +156,39 @@ function pointsToLatLngs(points: Array<[number, number]>): L.LatLngExpression[] 
   return points.map(([lat, lng]) => [lat, lng] as L.LatLngExpression)
 }
 
-function latLngsToPoints(layer: L.Polygon): Array<[number, number]> {
+function latLngsToPoints(layer: L.Polyline): Array<[number, number]> {
   const raw = layer.getLatLngs() as L.LatLng[] | L.LatLng[][]
   const ring = Array.isArray(raw[0]) ? (raw as L.LatLng[][])[0]! : (raw as L.LatLng[])
   return ring.map(ll => [ll.lat, ll.lng] as [number, number])
 }
 
+function enableZoneGeomanEdit(id: string) {
+  const target = zonePolygons.get(id)
+  if (!target) return
+  target.pm.enable({
+    allowSelfIntersection: false,
+    snappable: false,
+    draggable: true
+  })
+  const onUpdate = () => {
+    emit('zoneEdited', id, latLngsToPoints(target))
+  }
+  target.on('pm:edit', onUpdate)
+  target.on('pm:dragend', onUpdate)
+}
+
 function syncZone(z: Zone) {
   if (!map) return
-  // Ne pas écraser la géométrie d'une zone en cours d'édition
-  if (editingZoneId === z.id) {
-    const existing = zonePolygons.get(z.id)
-    if (existing) {
-      existing.setStyle(zoneStyle(z))
-      existing.getTooltip()?.setContent(z.name)
-    }
+  const existing = zonePolygons.get(z.id)
+
+  // Si le polygone existe déjà ET est en cours d'édition, on garde sa
+  // géométrie locale (poignées Geoman) et on ne met à jour que le style/label.
+  if (existing && editingZoneId === z.id) {
+    existing.setStyle(zoneStyle(z))
+    existing.getTooltip()?.setContent(z.name)
     return
   }
 
-  const existing = zonePolygons.get(z.id)
   const latlngs = pointsToLatLngs(z.points)
 
   if (existing) {
@@ -189,6 +214,10 @@ function syncZone(z: Zone) {
     })
     polygon.addTo(map)
     zonePolygons.set(z.id, polygon)
+
+    // Si la sélection a précédé l'arrivée des données (création WS),
+    // on active maintenant le mode édition Geoman sur le nouveau polygone.
+    if (editingZoneId === z.id) enableZoneGeomanEdit(z.id)
   }
 }
 
@@ -227,6 +256,118 @@ function stopZoneDraw() {
   if (map.pm.globalDrawModeEnabled?.()) map.pm.disableDraw()
 }
 
+function wallStyle(w: Wall) {
+  return {
+    color: w.color,
+    weight: w.thickness,
+    opacity: 1,
+    lineCap: 'round' as L.LineCapShape,
+    lineJoin: 'round' as L.LineJoinShape
+  }
+}
+
+function enableWallGeomanEdit(id: string) {
+  const target = wallPolylines.get(id)
+  if (!target) return
+  target.pm.enable({
+    allowSelfIntersection: true,
+    snappable: false,
+    draggable: true
+  })
+  const onUpdate = () => {
+    emit('wallEdited', id, latLngsToPoints(target))
+  }
+  target.on('pm:edit', onUpdate)
+  target.on('pm:dragend', onUpdate)
+}
+
+function syncWall(w: Wall) {
+  if (!map) return
+  const existing = wallPolylines.get(w.id)
+
+  // Si la polyligne existe déjà ET est en cours d'édition, on garde sa
+  // géométrie locale (poignées Geoman) et on ne met à jour que le style.
+  if (existing && editingWallId === w.id) {
+    existing.setStyle(wallStyle(w))
+    return
+  }
+
+  const latlngs = pointsToLatLngs(w.points)
+
+  if (existing) {
+    existing.setLatLngs(latlngs)
+    existing.setStyle(wallStyle(w))
+  } else {
+    const polyline = L.polyline(latlngs, {
+      ...wallStyle(w),
+      pane: WALL_PANE,
+      interactive: true
+    })
+    polyline.on('click', (e) => {
+      if (props.wallDrawMode) return
+      L.DomEvent.stopPropagation(e)
+      if (props.canEdit) emit('selectWall', w.id)
+    })
+    polyline.addTo(map)
+    wallPolylines.set(w.id, polyline)
+
+    // Si la sélection a précédé l'arrivée des données (création WS),
+    // on active maintenant le mode édition Geoman sur la nouvelle polyligne.
+    if (editingWallId === w.id) enableWallGeomanEdit(w.id)
+  }
+}
+
+function removeWall(id: string) {
+  const p = wallPolylines.get(id)
+  if (!p) return
+  p.pm?.disable?.()
+  p.remove()
+  wallPolylines.delete(id)
+  if (editingWallId === id) editingWallId = null
+}
+
+function diffSyncWalls(list: Wall[]) {
+  if (!map) return
+  const newIds = new Set(list.map(w => w.id))
+  for (const id of [...wallPolylines.keys()]) {
+    if (!newIds.has(id)) removeWall(id)
+  }
+  for (const w of list) syncWall(w)
+}
+
+function startWallDraw() {
+  if (!map) return
+  const color = props.draftWallColor ?? '#1f2937'
+  const weight = props.draftWallThickness ?? 3
+  map.pm.enableDraw('Line', {
+    snappable: false,
+    pathOptions: { color, weight, lineCap: 'round', lineJoin: 'round' },
+    hintlineStyle: { color, dashArray: [5, 5] },
+    templineStyle: { color }
+  })
+}
+
+function stopWallDraw() {
+  if (!map) return
+  if (map.pm.globalDrawModeEnabled?.()) map.pm.disableDraw()
+}
+
+function applyWallEditMode(id: string | null) {
+  if (!map) return
+  if (editingWallId && editingWallId !== id) {
+    const prev = wallPolylines.get(editingWallId)
+    if (prev) {
+      prev.pm.disable()
+      prev.off('pm:edit')
+      prev.off('pm:dragend')
+    }
+  }
+  editingWallId = id
+  // Si la polyligne n'existe pas encore (sélection avant arrivée des données),
+  // syncWall activera Geoman dès qu'elle sera créée.
+  if (id) enableWallGeomanEdit(id)
+}
+
 function applyZoneEditMode(id: string | null) {
   if (!map) return
   if (editingZoneId && editingZoneId !== id) {
@@ -238,21 +379,9 @@ function applyZoneEditMode(id: string | null) {
     }
   }
   editingZoneId = id
-  if (id) {
-    const target = zonePolygons.get(id)
-    if (target) {
-      target.pm.enable({
-        allowSelfIntersection: false,
-        snappable: false,
-        draggable: true
-      })
-      const onUpdate = () => {
-        emit('zoneEdited', id, latLngsToPoints(target))
-      }
-      target.on('pm:edit', onUpdate)
-      target.on('pm:dragend', onUpdate)
-    }
-  }
+  // Si le polygone n'existe pas encore (sélection avant arrivée des données),
+  // syncZone activera Geoman dès qu'il sera créé.
+  if (id) enableZoneGeomanEdit(id)
 }
 
 function initMap() {
@@ -268,6 +397,11 @@ function initMap() {
   const zonesPane = map.getPane(ZONE_PANE)
   if (zonesPane) zonesPane.style.zIndex = '350'
 
+  // Pane pour les murs, entre les zones et les caravanes
+  map.createPane(WALL_PANE)
+  const wallsPane = map.getPane(WALL_PANE)
+  if (wallsPane) wallsPane.style.zIndex = '360'
+
   const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap',
     maxZoom: 22,
@@ -276,7 +410,7 @@ function initMap() {
   const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
     maxZoom: 22,
-    maxNativeZoom: 22
+    maxNativeZoom: 19
   })
   osmLayer.addTo(map)
   L.control.layers({ Plan: osmLayer, Satellite: satelliteLayer }, undefined, { position: 'topright' }).addTo(map)
@@ -286,24 +420,31 @@ function initMap() {
       emit('placeAt', e.latlng.lat, e.latlng.lng)
       return
     }
-    if (props.zoneDrawMode) return
+    if (props.zoneDrawMode || props.wallDrawMode) return
     emit('select', null)
     emit('selectZone', null)
+    emit('selectWall', null)
   })
 
-  // Création de zone via Geoman
+  // Création de zone ou mur via Geoman
   map.on('pm:create', (e: any) => {
-    if (!props.zoneDrawMode) return
-    const layer = e.layer as L.Polygon
+    const layer = e.layer as L.Polyline
     const points = latLngsToPoints(layer)
     layer.remove()
-    emit('zoneCreated', points)
+    if (props.zoneDrawMode) {
+      emit('zoneCreated', points)
+    } else if (props.wallDrawMode) {
+      emit('wallCreated', points)
+    }
   })
 
   diffSync(props.caravans)
   diffSyncZones(props.zones)
+  diffSyncWalls(props.walls)
   if (props.zoneDrawMode) startZoneDraw()
+  if (props.wallDrawMode) startWallDraw()
   if (props.selectedZoneId) applyZoneEditMode(props.selectedZoneId)
+  if (props.selectedWallId) applyWallEditMode(props.selectedWallId)
 }
 
 // L'enveloppe automatique liée au suffix `.client.vue` peut faire fire
@@ -350,6 +491,24 @@ watch(() => props.draftZoneColor, () => {
     startZoneDraw()
   }
 })
+watch(() => props.walls, list => diffSyncWalls(list), { deep: true })
+watch(() => props.wallDrawMode, (mode) => {
+  if (mode) startWallDraw()
+  else stopWallDraw()
+})
+watch(() => props.selectedWallId, id => applyWallEditMode(id))
+watch(() => props.draftWallColor, () => {
+  if (props.wallDrawMode) {
+    stopWallDraw()
+    startWallDraw()
+  }
+})
+watch(() => props.draftWallThickness, () => {
+  if (props.wallDrawMode) {
+    stopWallDraw()
+    startWallDraw()
+  }
+})
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
@@ -359,7 +518,9 @@ onBeforeUnmount(() => {
   polygons.clear()
   markers.clear()
   zonePolygons.clear()
+  wallPolylines.clear()
   editingZoneId = null
+  editingWallId = null
 })
 </script>
 

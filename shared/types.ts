@@ -16,6 +16,7 @@ export interface Bed {
   label: string
   capacity: number
   position: number
+  hasCleanLinen: boolean
 }
 
 export interface Caravan {
@@ -53,10 +54,30 @@ export interface Booking {
   guest?: Guest
 }
 
+export interface CaravanUnavailability {
+  id: string
+  caravanId: string
+  from: string // ISO date "YYYY-MM-DD"
+  to: string // ISO date "YYYY-MM-DD" (exclusif)
+  reason: string | null
+  createdById: string
+  createdAt: string
+}
+
 export interface Zone {
   id: string
   name: string
   color: string
+  filled: boolean
+  points: Array<[number, number]>
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Wall {
+  id: string
+  color: string
+  thickness: number
   points: Array<[number, number]>
   createdAt: string
   updatedAt: string
@@ -76,6 +97,11 @@ export type RealtimeEvent =
   | 'zone:created'
   | 'zone:updated'
   | 'zone:deleted'
+  | 'wall:created'
+  | 'wall:updated'
+  | 'wall:deleted'
+  | 'unavailability:created'
+  | 'unavailability:deleted'
 
 export interface RealtimeMessage<T = unknown> {
   event: RealtimeEvent

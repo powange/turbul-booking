@@ -10,10 +10,9 @@ const pointSchema = z.tuple([
 ])
 
 const schema = z.object({
-  name: z.string().min(1).max(120).optional(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Couleur invalide (#rrggbb attendu)').optional(),
-  filled: z.boolean().optional(),
-  points: z.array(pointSchema).min(3, 'Au moins 3 sommets requis').optional()
+  thickness: z.number().min(1).max(20).optional(),
+  points: z.array(pointSchema).min(2, 'Au moins 2 sommets requis').optional()
 }).refine(d => Object.keys(d).length > 0, { message: 'Aucun champ à mettre à jour' })
 
 export default defineEventHandler(async (event) => {
@@ -23,23 +22,23 @@ export default defineEventHandler(async (event) => {
 
   const body = await readValidatedBody(event, schema.parse)
 
-  const existing = await prisma.zone.findUnique({ where: { id } })
-  if (!existing) throw createError({ statusCode: 404, statusMessage: 'Zone introuvable' })
+  const existing = await prisma.wall.findUnique({ where: { id } })
+  if (!existing) throw createError({ statusCode: 404, statusMessage: 'Mur introuvable' })
 
-  const zone = await prisma.zone.update({
+  const wall = await prisma.wall.update({
     where: { id },
     data: body
   })
 
   await logAudit({
     userId: user.id,
-    action: 'ZONE_UPDATE',
-    entityType: 'Zone',
+    action: 'WALL_UPDATE',
+    entityType: 'Wall',
     entityId: id,
     payload: body
   })
 
-  broadcast('zone:updated', zone)
+  broadcast('wall:updated', wall)
 
-  return zone
+  return wall
 })

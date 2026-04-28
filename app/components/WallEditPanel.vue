@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Zone } from '~~/shared/types'
+import type { Wall } from '~~/shared/types'
 
 const props = defineProps<{
-  zone: Zone
+  wall: Wall
   canEdit: boolean
 }>()
 
@@ -14,48 +14,24 @@ const emit = defineEmits<{
 const toast = useToast()
 
 const form = reactive({
-  name: props.zone.name,
-  color: props.zone.color,
-  filled: props.zone.filled
+  color: props.wall.color,
+  thickness: props.wall.thickness
 })
 
-watch(() => props.zone.id, () => {
-  form.name = props.zone.name
-  form.color = props.zone.color
-  form.filled = props.zone.filled
+watch(() => props.wall.id, () => {
+  form.color = props.wall.color
+  form.thickness = props.wall.thickness
 })
-
-const savingName = ref(false)
-async function saveName() {
-  if (form.name === props.zone.name) return
-  if (!form.name.trim()) {
-    form.name = props.zone.name
-    return
-  }
-  savingName.value = true
-  try {
-    await $fetch(`/api/zones/${props.zone.id}`, {
-      method: 'PATCH',
-      body: { name: form.name.trim() }
-    })
-    toast.add({ title: 'Nom enregistré', color: 'success' })
-    emit('saved')
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
-  } finally {
-    savingName.value = false
-  }
-}
 
 let colorTimer: ReturnType<typeof setTimeout> | null = null
 const savingColor = ref(false)
 watch(() => form.color, (color) => {
-  if (color === props.zone.color) return
+  if (color === props.wall.color) return
   if (colorTimer) clearTimeout(colorTimer)
   colorTimer = setTimeout(async () => {
     savingColor.value = true
     try {
-      await $fetch(`/api/zones/${props.zone.id}`, {
+      await $fetch(`/api/walls/${props.wall.id}`, {
         method: 'PATCH',
         body: { color }
       })
@@ -68,31 +44,34 @@ watch(() => form.color, (color) => {
   }, 250)
 })
 
-const savingFilled = ref(false)
-watch(() => form.filled, async (filled) => {
-  if (filled === props.zone.filled) return
-  savingFilled.value = true
-  try {
-    await $fetch(`/api/zones/${props.zone.id}`, {
-      method: 'PATCH',
-      body: { filled }
-    })
-    emit('saved')
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
-    form.filled = props.zone.filled
-  } finally {
-    savingFilled.value = false
-  }
+let thicknessTimer: ReturnType<typeof setTimeout> | null = null
+const savingThickness = ref(false)
+watch(() => form.thickness, (thickness) => {
+  if (thickness === props.wall.thickness) return
+  if (thicknessTimer) clearTimeout(thicknessTimer)
+  thicknessTimer = setTimeout(async () => {
+    savingThickness.value = true
+    try {
+      await $fetch(`/api/walls/${props.wall.id}`, {
+        method: 'PATCH',
+        body: { thickness }
+      })
+      emit('saved')
+    } catch (err: any) {
+      toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+    } finally {
+      savingThickness.value = false
+    }
+  }, 250)
 })
 
 const deleting = ref(false)
 async function remove() {
-  if (!confirm(`Supprimer la zone "${props.zone.name}" ?`)) return
+  if (!confirm('Supprimer ce mur ?')) return
   deleting.value = true
   try {
-    await $fetch(`/api/zones/${props.zone.id}`, { method: 'DELETE' })
-    toast.add({ title: 'Zone supprimée', color: 'success' })
+    await $fetch(`/api/walls/${props.wall.id}`, { method: 'DELETE' })
+    toast.add({ title: 'Mur supprimé', color: 'success' })
     emit('close')
   } catch (err: any) {
     toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
@@ -102,8 +81,8 @@ async function remove() {
 }
 
 const presetColors = [
-  '#3b82f6', '#22c55e', '#ef4444', '#f59e0b', '#a855f7',
-  '#ec4899', '#14b8a6', '#64748b', '#0ea5e9', '#84cc16'
+  '#1f2937', '#0f172a', '#475569', '#92400e', '#78350f',
+  '#7f1d1d', '#365314', '#134e4a', '#3b82f6', '#a855f7'
 ]
 </script>
 
@@ -113,25 +92,15 @@ const presetColors = [
       <div class="flex items-center gap-2 min-w-0">
         <span
           class="inline-block w-4 h-4 rounded-sm border border-default flex-shrink-0"
-          :style="{ background: zone.color }"
+          :style="{ background: wall.color }"
         />
-        <h2 class="font-semibold text-lg truncate">Zone</h2>
+        <h2 class="font-semibold text-lg truncate">Mur</h2>
       </div>
       <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="emit('close')" />
     </div>
 
     <div class="flex-1 overflow-y-auto px-4 py-4 space-y-6">
       <fieldset :disabled="!canEdit" class="space-y-4">
-        <UFormField label="Nom">
-          <UInput
-            v-model="form.name"
-            class="w-full"
-            :loading="savingName"
-            @blur="saveName"
-            @keydown.enter="saveName"
-          />
-        </UFormField>
-
         <UFormField label="Couleur">
           <div class="flex items-center gap-3">
             <input
@@ -154,18 +123,25 @@ const presetColors = [
           </div>
         </UFormField>
 
-        <UFormField label="Remplir la zone">
-          <USwitch v-model="form.filled" :loading="savingFilled" />
+        <UFormField :label="`Épaisseur (${form.thickness}px)`">
+          <input
+            v-model.number="form.thickness"
+            type="range"
+            min="1"
+            max="20"
+            step="1"
+            class="w-full"
+          >
         </UFormField>
 
         <p v-if="canEdit" class="text-xs text-muted flex items-center gap-1.5">
           <UIcon
-            v-if="savingColor || savingFilled"
+            v-if="savingColor || savingThickness"
             name="i-lucide-loader-circle"
             class="animate-spin"
           />
           <UIcon v-else name="i-lucide-info" />
-          Glissez les sommets de la zone sur la carte pour la modifier.
+          Glissez les sommets du mur sur la carte pour le modifier.
         </p>
       </fieldset>
     </div>
@@ -179,7 +155,7 @@ const presetColors = [
         :loading="deleting"
         @click="remove"
       >
-        Supprimer la zone
+        Supprimer le mur
       </UButton>
     </div>
   </div>

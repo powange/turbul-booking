@@ -286,6 +286,7 @@ async function updateWallPoints(id: string, points: Array<[number, number]>) {
       :caravans="caravans"
       :zones="zones"
       :walls="walls"
+      :bookings="bookings"
       :selected-id="selectedId"
       :selected-zone-id="selectedZoneId"
       :selected-wall-id="selectedWallId"

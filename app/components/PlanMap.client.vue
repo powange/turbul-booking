@@ -4,12 +4,13 @@ import 'leaflet/dist/leaflet.css'
 import '@geoman-io/leaflet-geoman-free'
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 import { latLngsToPoints } from '~/utils/leafletGeo'
-import type { Caravan, Zone, Wall } from '~~/shared/types'
+import type { Booking, Caravan, Zone, Wall } from '~~/shared/types'
 
 const props = defineProps<{
   caravans: Caravan[]
   zones: Zone[]
   walls: Wall[]
+  bookings: Booking[]
   selectedId: string | null
   selectedZoneId: string | null
   selectedWallId: string | null
@@ -45,6 +46,7 @@ let resizeObserver: ResizeObserver | null = null
 // Elles sont attachées à la map dans initMap() et nettoyées au démontage.
 const caravansLayer = usePlanCaravans({
   caravans: toRef(props, 'caravans'),
+  bookings: toRef(props, 'bookings'),
   selectedId: toRef(props, 'selectedId'),
   canEdit: toRef(props, 'canEdit'),
   onSelect: id => emit('select', id),
@@ -178,7 +180,9 @@ onBeforeUnmount(() => {
   border: none;
 }
 .caravan-pin {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   transform: translate(-50%, -50%);
   padding: 2px 8px;
   border-radius: 9999px;
@@ -190,6 +194,11 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   pointer-events: auto;
+}
+.caravan-pin-icon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
 }
 .zone-label.leaflet-tooltip {
   background: transparent;

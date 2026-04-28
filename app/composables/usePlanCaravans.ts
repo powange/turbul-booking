@@ -1,12 +1,19 @@
 import L from 'leaflet'
 import type { Ref } from 'vue'
-import type { Caravan } from '~~/shared/types'
+import type { Booking, Caravan } from '~~/shared/types'
 import { caravanCorners } from '~/utils/geo'
 import { escapeHtml } from '~/utils/leafletGeo'
 import { PLAN_COLORS, CARAVAN_PIN_CLASSES } from '~/utils/planColors'
+import { todayIso } from '~/utils/dates'
 
 export interface UsePlanCaravansOptions {
   caravans: Ref<Caravan[]>
+  /**
+   * Réservations utilisées pour déterminer si tous les lits occupés ce jour
+   * ont du linge propre (icône lit dans le pin). Optionnel : si non fourni,
+   * l'icône lit n'apparaît jamais.
+   */
+  bookings?: Ref<Booking[]>
   selectedId: Ref<string | null>
   canEdit: Ref<boolean>
   onSelect: (id: string | null) => void
@@ -42,13 +49,40 @@ export function usePlanCaravans(opts: UsePlanCaravansOptions) {
     }
   }
 
+  // SVG inline (Lucide) injectés dans le pin HTML — `currentColor` hérite
+  // du blanc du pin pour rester lisibles sur le fond coloré.
+  const ZAP_SVG = '<svg class="caravan-pin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>'
+  const BED_SVG = '<svg class="caravan-pin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/></svg>'
+
+  function pinIcons(c: Caravan): string {
+    const parts: string[] = []
+    if (c.hasElectricity) parts.push(ZAP_SVG)
+
+    // Icône linge propre : seulement si la caravane héberge au moins un
+    // hôte aujourd'hui ET que tous les lits avec une réservation du jour
+    // ont leur linge marqué propre. Si personne n'arrive aujourd'hui, on
+    // ne montre rien (pas d'info utile).
+    if (opts.bookings) {
+      const today = todayIso()
+      const occupiedBedIds = new Set(
+        opts.bookings.value.filter(b => b.date === today).map(b => b.bedId)
+      )
+      const occupiedBeds = c.beds.filter(b => occupiedBedIds.has(b.id))
+      if (occupiedBeds.length > 0 && occupiedBeds.every(b => b.hasCleanLinen)) {
+        parts.push(BED_SVG)
+      }
+    }
+
+    return parts.join('')
+  }
+
   function makeIcon(c: Caravan, selected: boolean): L.DivIcon {
     const colorClass = selected
       ? CARAVAN_PIN_CLASSES.selected
       : c.hasElectricity ? CARAVAN_PIN_CLASSES.powered : CARAVAN_PIN_CLASSES.neutral
     return L.divIcon({
       className: 'caravan-marker',
-      html: `<div class="caravan-pin ${colorClass}" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>`,
+      html: `<div class="caravan-pin ${colorClass}" title="${escapeHtml(c.name)}">${pinIcons(c)}${escapeHtml(c.name)}</div>`,
       iconSize: [0, 0],
       iconAnchor: [0, 0]
     })
@@ -142,6 +176,15 @@ export function usePlanCaravans(opts: UsePlanCaravansOptions) {
     if (!map) return
     for (const c of opts.caravans.value) syncCaravan(c)
   })
+  // Si on suit les bookings, leur évolution change l'icône "linge propre"
+  // (un nouveau booking d'aujourd'hui peut faire apparaître ou disparaître
+  // l'icône) — on resync les pins.
+  if (opts.bookings) {
+    watch(opts.bookings, () => {
+      if (!map) return
+      for (const c of opts.caravans.value) syncCaravan(c)
+    }, { deep: true })
+  }
 
   return { attach, detach }
 }

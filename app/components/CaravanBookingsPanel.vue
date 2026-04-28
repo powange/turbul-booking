@@ -160,7 +160,7 @@ async function removeUnavailability(u: CaravanUnavailability) {
   removingUnavIds.value = [...removingUnavIds.value, u.id]
   try {
     await $fetch(`/api/unavailabilities/${u.id}`, { method: 'DELETE' })
-    applyUnavailabilityDeleted(u.id, u.caravanId)
+    applyUnavailabilityDeleted(u.id)
     toast.add({ title: 'Indisponibilité levée', color: 'success' })
   } catch (err) {
     toast.add({

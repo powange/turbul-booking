@@ -168,7 +168,9 @@ function pointsToLatLngs(points: Array<[number, number]>): L.LatLngExpression[] 
   return points.map(([lat, lng]) => [lat, lng] as L.LatLngExpression)
 }
 
-function latLngsToPoints(layer: L.Polyline): Array<[number, number]> {
+// Accepte aussi bien L.Polyline (mur) que L.Polygon (zone) — les types
+// Leaflet ont des génériques incompatibles entre les deux, on duck-type.
+function latLngsToPoints(layer: { getLatLngs: () => L.LatLng[] | L.LatLng[][] | L.LatLng[][][] }): Array<[number, number]> {
   const raw = layer.getLatLngs() as L.LatLng[] | L.LatLng[][]
   const ring = Array.isArray(raw[0]) ? (raw as L.LatLng[][])[0]! : (raw as L.LatLng[])
   return ring.map(ll => [ll.lat, ll.lng] as [number, number])
@@ -439,9 +441,9 @@ function initMap() {
   })
 
   // Création de zone ou mur via Geoman. L'événement Geoman n'est pas typé
-  // dans @types/leaflet, on cast minimal sur la forme attendue.
+  // dans @types/leaflet, on cast via unknown sur la forme attendue.
   map.on('pm:create', (e) => {
-    const layer = (e as { layer: L.Polyline }).layer
+    const layer = (e as unknown as { layer: L.Layer & { getLatLngs: () => L.LatLng[] | L.LatLng[][] | L.LatLng[][][] } }).layer
     const points = latLngsToPoints(layer)
     layer.remove()
     if (props.zoneDrawMode) {

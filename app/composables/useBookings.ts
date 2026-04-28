@@ -10,8 +10,14 @@ const collection = createRealtimeCollection<Booking>({
   // Une réservation est une nuit unique → on filtre par appartenance à
   // la fenêtre [from, to) actuellement chargée.
   rangeOverlap: (b, range) => b.date >= range.from && b.date < range.to,
-  mapFetched: b => ({ ...b, date: String(b.date).slice(0, 10) }),
-  mapEvent: b => ({ ...b, date: String(b.date).slice(0, 10) })
+  mapFetched: (raw) => {
+    const b = raw as Booking
+    return { ...b, date: String(b.date).slice(0, 10) }
+  },
+  mapEvent: (raw) => {
+    const b = raw as Booking
+    return { ...b, date: String(b.date).slice(0, 10) }
+  }
 })
 
 export function useBookings() {

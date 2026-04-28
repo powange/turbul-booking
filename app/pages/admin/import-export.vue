@@ -21,9 +21,9 @@ const exporting = ref(false)
 function isExportChecked(key: Section) {
   return exportSelected.value.has(key)
 }
-function setExportChecked(key: Section, value: boolean) {
+function setExportChecked(key: Section, value: boolean | 'indeterminate') {
   const next = new Set(exportSelected.value)
-  if (value) next.add(key)
+  if (value === true) next.add(key)
   else next.delete(key)
   exportSelected.value = next
 }
@@ -79,9 +79,9 @@ const counts = computed<Record<Section, number | null> | null>(() => {
 function isImportChecked(key: Section) {
   return importSelected.value.has(key)
 }
-function setImportChecked(key: Section, value: boolean) {
+function setImportChecked(key: Section, value: boolean | 'indeterminate') {
   const next = new Set(importSelected.value)
-  if (value) next.add(key)
+  if (value === true) next.add(key)
   else next.delete(key)
   importSelected.value = next
 }
@@ -171,7 +171,7 @@ async function performImport() {
             :key="s.key"
             :model-value="isExportChecked(s.key)"
             :label="s.label"
-            @update:model-value="(v: boolean) => setExportChecked(s.key, v)"
+            @update:model-value="(v: boolean | 'indeterminate') => setExportChecked(s.key, v)"
           />
         </div>
 
@@ -235,7 +235,7 @@ async function performImport() {
               <UCheckbox
                 :model-value="isImportChecked(s.key)"
                 :disabled="counts[s.key] === null"
-                @update:model-value="(v: boolean) => setImportChecked(s.key, v)"
+                @update:model-value="(v: boolean | 'indeterminate') => setImportChecked(s.key, v)"
               />
               <span :class="counts[s.key] === null ? 'text-muted text-sm' : 'text-sm'">
                 <span class="font-medium">{{ s.label }}</span>

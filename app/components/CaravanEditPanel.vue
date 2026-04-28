@@ -154,7 +154,7 @@ async function addBed() {
   }
 }
 
-async function updateBed(id: string, data: { label?: string, capacity?: number }) {
+async function updateBed(id: string, data: { label?: string, capacity?: number, hasCleanLinen?: boolean }) {
   try {
     await $fetch(`/api/beds/${id}`, { method: 'PATCH', body: data })
   } catch (err) {

@@ -26,12 +26,14 @@ ENV NITRO_PORT=3000
 # Bundle Nuxt/Nitro autonome (inclut @prisma/client + binaire engine)
 COPY --from=build /app/.output ./.output
 
-# Schéma + migrations + CLI Prisma juste pour exécuter `prisma migrate deploy`
-# au démarrage du conteneur.
+# Schéma + config + migrations + CLI Prisma 7 pour exécuter
+# `prisma migrate deploy` au démarrage du conteneur. Prisma 7 lit la
+# datasource depuis prisma.config.ts (plus depuis schema.prisma).
 COPY package.json ./
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 RUN --mount=type=cache,target=/root/.npm \
-    npm install --no-save --ignore-scripts --omit=dev --no-audit --no-fund prisma@^6.2.0
+    npm install --no-save --ignore-scripts --omit=dev --no-audit --no-fund prisma@^7.8.0
 
 EXPOSE 3000
 ENTRYPOINT ["/sbin/tini", "--"]

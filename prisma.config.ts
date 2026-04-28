@@ -4,7 +4,11 @@
 // PG (cf. server/utils/db.ts).
 //
 // Doc : https://pris.ly/d/config-datasource
-import 'dotenv/config'
+//
+// `process.env.DATABASE_URL` est attendu en input — fourni par docker-compose,
+// le shell, ou Prisma qui charge automatiquement le `.env` à côté du config.
+// On ne fait pas appel à `dotenv` explicitement pour rester léger en prod
+// (image runtime n'a pas la dépendance).
 import { defineConfig, env } from 'prisma/config'
 
 type Env = {

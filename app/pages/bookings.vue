@@ -87,6 +87,29 @@ function goToday() {
 function printPage() {
   if (import.meta.client) window.print()
 }
+
+// === Filtre caravanes ===
+// Multi-select en mémoire (pas de persistance). Vide = "toutes" sélectionnées
+// (le défaut, et le reset si une caravane sélectionnée disparaît du serveur).
+// Le PDF n'est PAS impacté : le DOM rend tout, la CSS print contourne la
+// règle de masquage écran (cf. BookingsGrid.vue + main.css).
+const selectedCaravanIds = ref<string[]>([])
+
+const caravanFilterOptions = computed(() =>
+  [...caravans.value]
+    .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+    .map(c => ({ label: c.name, value: c.id }))
+)
+
+const hiddenCaravanIds = computed<Set<string>>(() => {
+  if (selectedCaravanIds.value.length === 0) return new Set()
+  const visible = new Set(selectedCaravanIds.value)
+  return new Set(
+    caravans.value
+      .filter(c => !visible.has(c.id))
+      .map(c => c.id)
+  )
+})
 </script>
 
 <template>
@@ -142,6 +165,16 @@ function printPage() {
         v-model="selectedIso"
         type="date"
       />
+
+      <USelectMenu
+        v-model="selectedCaravanIds"
+        :items="caravanFilterOptions"
+        value-key="value"
+        multiple
+        :placeholder="selectedCaravanIds.length === 0 ? 'Toutes les caravanes' : `${selectedCaravanIds.length}/${caravans.length} sélectionnée(s)`"
+        icon="i-lucide-filter"
+        class="min-w-56"
+      />
     </div>
 
     <BookingsGrid
@@ -149,6 +182,7 @@ function printPage() {
       :bookings="bookings"
       :unavailabilities="unavailabilities"
       :dates="dates"
+      :hidden-caravan-ids="hiddenCaravanIds"
       @cell-click="onCellClick"
     />
 

@@ -7,6 +7,13 @@ const props = defineProps<{
   bookings: Booking[]
   unavailabilities: CaravanUnavailability[]
   dates: string[]
+  /**
+   * Caravanes à masquer côté écran. Le filtre n'altère pas le DOM rendu :
+   * on applique juste une classe `caravan-row-filtered` qui passe en
+   * `display: none` à l'écran. La règle `@media print` la neutralise pour
+   * que le PDF montre toujours toutes les caravanes (cf. main.css).
+   */
+  hiddenCaravanIds?: Set<string>
 }>()
 
 const emit = defineEmits<{
@@ -88,7 +95,10 @@ function bedRowClass(bookings: Booking[], capacity: number) {
           v-for="caravan in caravans"
           :key="caravan.id"
         >
-          <tr v-if="caravan.beds.length === 0">
+          <tr
+            v-if="caravan.beds.length === 0"
+            :class="{ 'caravan-row-filtered': hiddenCaravanIds?.has(caravan.id) }"
+          >
             <td class="px-3 py-2 sticky left-0 bg-default font-medium">
               {{ caravan.name }}
             </td>
@@ -103,6 +113,7 @@ function bedRowClass(bookings: Booking[], capacity: number) {
             v-for="(bed, idx) in caravan.beds"
             :key="bed.id"
             class="border-t border-default"
+            :class="{ 'caravan-row-filtered': hiddenCaravanIds?.has(caravan.id) }"
           >
             <td
               v-if="idx === 0"

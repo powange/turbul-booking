@@ -28,6 +28,18 @@ h1, h2, h3 {
   color: var(--brand-heading);
 }
 
+/* Filtre caravanes sur /bookings : à l'écran, les lignes des caravanes
+   filtrées sont masquées. Sur l'impression, on neutralise pour que le PDF
+   montre toujours toutes les caravanes (le filtre est purement visuel). */
+.caravan-row-filtered {
+  display: none;
+}
+@media print {
+  .caravan-row-filtered {
+    display: table-row !important;
+  }
+}
+
 /* ============================================================
    Impression — utilisé en priorité sur la page /bookings pour
    exporter une semaine en PDF via la boîte de dialogue navigateur.

@@ -6,6 +6,13 @@ jobs:
   ci:
     runs-on: ${{ matrix.os }}
 
+    # Variables non-sensibles utilisées par `prisma generate` (postinstall)
+    # et par les commandes Prisma qui chargent prisma.config.ts. Aucun
+    # accès réel à une base n'est tenté en CI : on fournit juste une URL
+    # syntaxiquement valide pour que la config se résolve.
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+
     strategy:
       matrix:
         os: [ubuntu-latest]

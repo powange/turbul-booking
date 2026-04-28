@@ -23,12 +23,17 @@ interface ListResponse {
   pageSize: number
 }
 
+// USelect/Reka UI refusent les SelectItem avec value === '' — on utilise
+// un sentinel "__all" pour "pas de filtre" et on le traduit en undefined
+// au moment de la requête.
+const ALL = '__all'
+
 const filters = reactive({
   from: addDaysIso(todayIso(), -30),
   to: todayIso(),
-  action: '' as string,
-  entityType: '' as string,
-  userId: '' as string
+  action: ALL as string,
+  entityType: ALL as string,
+  userId: ALL as string
 })
 
 const page = ref(1)
@@ -47,9 +52,9 @@ const { data, refresh: refreshLogs, status } = await useFetch<ListResponse>('/ap
   query: computed(() => ({
     from: filters.from || undefined,
     to: filters.to || undefined,
-    action: filters.action || undefined,
-    entityType: filters.entityType || undefined,
-    userId: filters.userId || undefined,
+    action: filters.action !== ALL ? filters.action : undefined,
+    entityType: filters.entityType !== ALL ? filters.entityType : undefined,
+    userId: filters.userId !== ALL ? filters.userId : undefined,
     page: page.value,
     pageSize
   })),
@@ -62,17 +67,17 @@ watch([filters, page], () => refreshLogs(), { deep: true })
 const totalPages = computed(() => Math.max(1, Math.ceil((data.value?.total ?? 0) / pageSize)))
 
 const actionOptions = computed(() => [
-  { label: 'Toutes', value: '' },
+  { label: 'Toutes', value: ALL },
   ...((distinct.value?.actions ?? []).map(a => ({ label: a, value: a })))
 ])
 
 const entityOptions = computed(() => [
-  { label: 'Toutes', value: '' },
+  { label: 'Toutes', value: ALL },
   ...((distinct.value?.entityTypes ?? []).map(e => ({ label: e, value: e })))
 ])
 
 const userOptions = computed(() => [
-  { label: 'Tous', value: '' },
+  { label: 'Tous', value: ALL },
   ...((distinct.value?.users ?? []).map(u => ({ label: `${u.name} (${u.email})`, value: u.id })))
 ])
 
@@ -104,9 +109,9 @@ function actionColor(a: string) {
 function resetFilters() {
   filters.from = addDaysIso(todayIso(), -30)
   filters.to = todayIso()
-  filters.action = ''
-  filters.entityType = ''
-  filters.userId = ''
+  filters.action = ALL
+  filters.entityType = ALL
+  filters.userId = ALL
   page.value = 1
 }
 

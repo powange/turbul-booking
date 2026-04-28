@@ -71,20 +71,56 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       class="space-y-4"
       @submit="onSubmit"
     >
-      <UFormField label="Nom complet" name="name" required>
-        <UInput v-model="state.name" autocomplete="name" class="w-full" />
+      <UFormField
+        label="Nom complet"
+        name="name"
+        required
+      >
+        <UInput
+          v-model="state.name"
+          autocomplete="name"
+          class="w-full"
+        />
       </UFormField>
 
-      <UFormField label="Email" name="email" required>
-        <UInput v-model="state.email" type="email" autocomplete="email" class="w-full" />
+      <UFormField
+        label="Email"
+        name="email"
+        required
+      >
+        <UInput
+          v-model="state.email"
+          type="email"
+          autocomplete="email"
+          class="w-full"
+        />
       </UFormField>
 
-      <UFormField label="Mot de passe" name="password" required help="Au moins 8 caractères">
-        <UInput v-model="state.password" type="password" autocomplete="new-password" class="w-full" />
+      <UFormField
+        label="Mot de passe"
+        name="password"
+        required
+        help="Au moins 8 caractères"
+      >
+        <UInput
+          v-model="state.password"
+          type="password"
+          autocomplete="new-password"
+          class="w-full"
+        />
       </UFormField>
 
-      <UFormField label="Confirmer le mot de passe" name="passwordConfirm" required>
-        <UInput v-model="state.passwordConfirm" type="password" autocomplete="new-password" class="w-full" />
+      <UFormField
+        label="Confirmer le mot de passe"
+        name="passwordConfirm"
+        required
+      >
+        <UInput
+          v-model="state.passwordConfirm"
+          type="password"
+          autocomplete="new-password"
+          class="w-full"
+        />
       </UFormField>
 
       <UAlert
@@ -94,7 +130,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         :title="errorMsg"
       />
 
-      <UButton type="submit" block :loading="loading">
+      <UButton
+        type="submit"
+        block
+        :loading="loading"
+      >
         Créer le compte administrateur
       </UButton>
     </UForm>

@@ -181,16 +181,26 @@ const capacityOptions = [
   <div class="flex flex-col h-full">
     <div class="px-4 py-3 border-b border-default flex items-center justify-between">
       <div>
-        <h2 class="font-semibold text-lg">{{ caravan.name }}</h2>
+        <h2 class="font-semibold text-lg">
+          {{ caravan.name }}
+        </h2>
         <p class="text-xs text-muted">
           {{ caravan.beds.length }} lit{{ caravan.beds.length > 1 ? 's' : '' }} · {{ totalCapacity }} place{{ totalCapacity > 1 ? 's' : '' }} · {{ caravan.hasElectricity ? 'Électricité' : 'Sans électricité' }}
         </p>
       </div>
-      <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="emit('close')" />
+      <UButton
+        icon="i-lucide-x"
+        color="neutral"
+        variant="ghost"
+        @click="emit('close')"
+      />
     </div>
 
     <div class="flex-1 overflow-y-auto px-4 py-4 space-y-6">
-      <fieldset :disabled="!canEdit" class="space-y-4">
+      <fieldset
+        :disabled="!canEdit"
+        class="space-y-4"
+      >
         <legend class="text-sm font-semibold text-muted mb-2">
           Caractéristiques
         </legend>
@@ -207,10 +217,24 @@ const capacityOptions = [
 
         <div class="grid grid-cols-2 gap-3">
           <UFormField label="Largeur (m)">
-            <UInput v-model.number="form.width" type="number" step="0.1" min="0.5" max="20" class="w-full" />
+            <UInput
+              v-model.number="form.width"
+              type="number"
+              step="0.1"
+              min="0.5"
+              max="20"
+              class="w-full"
+            />
           </UFormField>
           <UFormField label="Longueur (m)">
-            <UInput v-model.number="form.length" type="number" step="0.1" min="0.5" max="30" class="w-full" />
+            <UInput
+              v-model.number="form.length"
+              type="number"
+              step="0.1"
+              min="0.5"
+              max="30"
+              class="w-full"
+            />
           </UFormField>
         </div>
 
@@ -225,9 +249,15 @@ const capacityOptions = [
           >
         </UFormField>
 
-        <USwitch v-model="form.hasElectricity" label="Raccordée à l'électricité" />
+        <USwitch
+          v-model="form.hasElectricity"
+          label="Raccordée à l'électricité"
+        />
 
-        <p v-if="canEdit" class="text-xs text-muted flex items-center gap-1.5">
+        <p
+          v-if="canEdit"
+          class="text-xs text-muted flex items-center gap-1.5"
+        >
           <UIcon
             v-if="dimsDirty"
             name="i-lucide-loader-circle"
@@ -246,10 +276,15 @@ const capacityOptions = [
 
       <section class="space-y-3">
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-muted">Lits</h3>
+          <h3 class="text-sm font-semibold text-muted">
+            Lits
+          </h3>
         </div>
 
-        <ul v-if="caravan.beds.length" class="space-y-2">
+        <ul
+          v-if="caravan.beds.length"
+          class="space-y-2"
+        >
           <li
             v-for="bed in caravan.beds"
             :key="bed.id"
@@ -287,13 +322,26 @@ const capacityOptions = [
             />
           </li>
         </ul>
-        <p v-else class="text-sm text-muted">
+        <p
+          v-else
+          class="text-sm text-muted"
+        >
           Aucun lit pour cette caravane.
         </p>
 
-        <div v-if="canEdit" class="flex items-end gap-2 pt-2">
-          <UFormField label="Nouveau lit" class="flex-1">
-            <UInput v-model="newBed.label" placeholder="ex: Lit haut" size="sm" />
+        <div
+          v-if="canEdit"
+          class="flex items-end gap-2 pt-2"
+        >
+          <UFormField
+            label="Nouveau lit"
+            class="flex-1"
+          >
+            <UInput
+              v-model="newBed.label"
+              placeholder="ex: Lit haut"
+              size="sm"
+            />
           </UFormField>
           <USelect
             v-model="newBed.capacity"
@@ -313,7 +361,10 @@ const capacityOptions = [
       </section>
     </div>
 
-    <div v-if="canEdit" class="px-4 py-3 border-t border-default">
+    <div
+      v-if="canEdit"
+      class="px-4 py-3 border-t border-default"
+    >
       <UButton
         block
         color="error"

@@ -531,7 +531,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="mapEl" class="w-full h-full" />
+  <div
+    ref="mapEl"
+    class="w-full h-full"
+  />
 </template>
 
 <style>

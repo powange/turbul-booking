@@ -120,19 +120,45 @@ const tabs = [
   >
     <template #body>
       <div class="space-y-4">
-        <UTabs v-model="tab" :items="tabs" />
+        <UTabs
+          v-model="tab"
+          :items="tabs"
+        />
 
-        <div v-if="tab === 'profile'" class="space-y-4">
-          <UFormField label="Nom complet" required>
-            <UInput v-model="profile.name" class="w-full" />
+        <div
+          v-if="tab === 'profile'"
+          class="space-y-4"
+        >
+          <UFormField
+            label="Nom complet"
+            required
+          >
+            <UInput
+              v-model="profile.name"
+              class="w-full"
+            />
           </UFormField>
 
-          <UFormField label="Email" required>
-            <UInput v-model="profile.email" type="email" class="w-full" />
+          <UFormField
+            label="Email"
+            required
+          >
+            <UInput
+              v-model="profile.email"
+              type="email"
+              class="w-full"
+            />
           </UFormField>
 
-          <UFormField label="Rôle" required>
-            <USelect v-model="profile.role" :items="roleOptions" class="w-full" />
+          <UFormField
+            label="Rôle"
+            required
+          >
+            <USelect
+              v-model="profile.role"
+              :items="roleOptions"
+              class="w-full"
+            />
           </UFormField>
 
           <UAlert
@@ -144,11 +170,26 @@ const tabs = [
           />
         </div>
 
-        <div v-if="tab === 'password'" class="space-y-4">
-          <UFormField label="Nouveau mot de passe" help="Au moins 8 caractères. À communiquer à l'utilisateur.">
+        <div
+          v-if="tab === 'password'"
+          class="space-y-4"
+        >
+          <UFormField
+            label="Nouveau mot de passe"
+            help="Au moins 8 caractères. À communiquer à l'utilisateur."
+          >
             <div class="flex gap-2">
-              <UInput v-model="newPassword" type="text" autocomplete="new-password" class="flex-1" />
-              <UButton variant="outline" icon="i-lucide-shuffle" @click="generatePassword">
+              <UInput
+                v-model="newPassword"
+                type="text"
+                autocomplete="new-password"
+                class="flex-1"
+              />
+              <UButton
+                variant="outline"
+                icon="i-lucide-shuffle"
+                @click="generatePassword"
+              >
                 Générer
               </UButton>
             </div>
@@ -166,7 +207,12 @@ const tabs = [
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
-        <UButton variant="ghost" @click="emit('update:open', false)">Fermer</UButton>
+        <UButton
+          variant="ghost"
+          @click="emit('update:open', false)"
+        >
+          Fermer
+        </UButton>
         <UButton
           v-if="tab === 'profile'"
           :loading="submittingProfile"

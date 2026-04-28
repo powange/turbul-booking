@@ -115,13 +115,23 @@ const presetColors = [
           class="inline-block w-4 h-4 rounded-sm border border-default flex-shrink-0"
           :style="{ background: zone.color }"
         />
-        <h2 class="font-semibold text-lg truncate">Zone</h2>
+        <h2 class="font-semibold text-lg truncate">
+          Zone
+        </h2>
       </div>
-      <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="emit('close')" />
+      <UButton
+        icon="i-lucide-x"
+        color="neutral"
+        variant="ghost"
+        @click="emit('close')"
+      />
     </div>
 
     <div class="flex-1 overflow-y-auto px-4 py-4 space-y-6">
-      <fieldset :disabled="!canEdit" class="space-y-4">
+      <fieldset
+        :disabled="!canEdit"
+        class="space-y-4"
+      >
         <UFormField label="Nom">
           <UInput
             v-model="form.name"
@@ -139,7 +149,10 @@ const presetColors = [
               type="color"
               class="w-10 h-10 rounded border border-default cursor-pointer"
             >
-            <UInput v-model="form.color" class="flex-1" />
+            <UInput
+              v-model="form.color"
+              class="flex-1"
+            />
           </div>
           <div class="flex flex-wrap gap-1.5 mt-2">
             <button
@@ -155,22 +168,34 @@ const presetColors = [
         </UFormField>
 
         <UFormField label="Remplir la zone">
-          <USwitch v-model="form.filled" :loading="savingFilled" />
+          <USwitch
+            v-model="form.filled"
+            :loading="savingFilled"
+          />
         </UFormField>
 
-        <p v-if="canEdit" class="text-xs text-muted flex items-center gap-1.5">
+        <p
+          v-if="canEdit"
+          class="text-xs text-muted flex items-center gap-1.5"
+        >
           <UIcon
             v-if="savingColor || savingFilled"
             name="i-lucide-loader-circle"
             class="animate-spin"
           />
-          <UIcon v-else name="i-lucide-info" />
+          <UIcon
+            v-else
+            name="i-lucide-info"
+          />
           Glissez les sommets de la zone sur la carte pour la modifier.
         </p>
       </fieldset>
     </div>
 
-    <div v-if="canEdit" class="px-4 py-3 border-t border-default">
+    <div
+      v-if="canEdit"
+      class="px-4 py-3 border-t border-default"
+    >
       <UButton
         block
         color="error"

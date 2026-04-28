@@ -56,10 +56,17 @@ function fmt(d: string) {
   <UContainer class="py-6 space-y-4">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-xl font-semibold">Utilisateurs</h1>
-        <p class="text-sm text-muted">{{ users.length }} compte{{ users.length > 1 ? 's' : '' }}</p>
+        <h1 class="text-xl font-semibold">
+          Utilisateurs
+        </h1>
+        <p class="text-sm text-muted">
+          {{ users.length }} compte{{ users.length > 1 ? 's' : '' }}
+        </p>
       </div>
-      <UButton icon="i-lucide-user-plus" @click="createOpen = true">
+      <UButton
+        icon="i-lucide-user-plus"
+        @click="createOpen = true"
+      >
         Nouvel utilisateur
       </UButton>
     </div>
@@ -68,10 +75,18 @@ function fmt(d: string) {
       <table class="w-full text-sm">
         <thead class="bg-elevated">
           <tr>
-            <th class="text-left px-3 py-2">Nom</th>
-            <th class="text-left px-3 py-2">Email</th>
-            <th class="text-left px-3 py-2">Rôle</th>
-            <th class="text-left px-3 py-2 hidden sm:table-cell">Créé le</th>
+            <th class="text-left px-3 py-2">
+              Nom
+            </th>
+            <th class="text-left px-3 py-2">
+              Email
+            </th>
+            <th class="text-left px-3 py-2">
+              Rôle
+            </th>
+            <th class="text-left px-3 py-2 hidden sm:table-cell">
+              Créé le
+            </th>
             <th class="px-3 py-2 w-32" />
           </tr>
         </thead>
@@ -92,11 +107,20 @@ function fmt(d: string) {
                 class="ml-1"
               />
             </td>
-            <td class="px-3 py-2 text-muted">{{ u.email }}</td>
-            <td class="px-3 py-2">
-              <UBadge :color="roleColor(u.role)" variant="subtle">{{ roleLabel(u.role) }}</UBadge>
+            <td class="px-3 py-2 text-muted">
+              {{ u.email }}
             </td>
-            <td class="px-3 py-2 text-muted hidden sm:table-cell">{{ fmt(u.createdAt) }}</td>
+            <td class="px-3 py-2">
+              <UBadge
+                :color="roleColor(u.role)"
+                variant="subtle"
+              >
+                {{ roleLabel(u.role) }}
+              </UBadge>
+            </td>
+            <td class="px-3 py-2 text-muted hidden sm:table-cell">
+              {{ fmt(u.createdAt) }}
+            </td>
             <td class="px-3 py-2 text-right">
               <UButton
                 icon="i-lucide-pencil"
@@ -119,7 +143,10 @@ function fmt(d: string) {
       </table>
     </div>
 
-    <UserCreateModal v-model:open="createOpen" @created="refresh" />
+    <UserCreateModal
+      v-model:open="createOpen"
+      @created="refresh"
+    />
     <UserEditModal
       v-model:open="editOpen"
       :user="editTarget"

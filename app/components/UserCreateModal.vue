@@ -84,33 +84,77 @@ function generatePassword() {
   >
     <template #body>
       <div class="space-y-4">
-        <UFormField label="Nom complet" required>
-          <UInput v-model="state.name" autocomplete="name" class="w-full" />
+        <UFormField
+          label="Nom complet"
+          required
+        >
+          <UInput
+            v-model="state.name"
+            autocomplete="name"
+            class="w-full"
+          />
         </UFormField>
 
-        <UFormField label="Email" required>
-          <UInput v-model="state.email" type="email" autocomplete="email" class="w-full" />
+        <UFormField
+          label="Email"
+          required
+        >
+          <UInput
+            v-model="state.email"
+            type="email"
+            autocomplete="email"
+            class="w-full"
+          />
         </UFormField>
 
-        <UFormField label="Mot de passe initial" required help="Au moins 8 caractères. À communiquer à l'utilisateur.">
+        <UFormField
+          label="Mot de passe initial"
+          required
+          help="Au moins 8 caractères. À communiquer à l'utilisateur."
+        >
           <div class="flex gap-2">
-            <UInput v-model="state.password" type="text" autocomplete="new-password" class="flex-1" />
-            <UButton variant="outline" icon="i-lucide-shuffle" @click="generatePassword">
+            <UInput
+              v-model="state.password"
+              type="text"
+              autocomplete="new-password"
+              class="flex-1"
+            />
+            <UButton
+              variant="outline"
+              icon="i-lucide-shuffle"
+              @click="generatePassword"
+            >
               Générer
             </UButton>
           </div>
         </UFormField>
 
-        <UFormField label="Rôle" required>
-          <USelect v-model="state.role" :items="roleOptions" class="w-full" />
+        <UFormField
+          label="Rôle"
+          required
+        >
+          <USelect
+            v-model="state.role"
+            :items="roleOptions"
+            class="w-full"
+          />
         </UFormField>
       </div>
     </template>
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
-        <UButton variant="ghost" @click="emit('update:open', false)">Annuler</UButton>
-        <UButton :loading="submitting" icon="i-lucide-check" @click="onSubmit">
+        <UButton
+          variant="ghost"
+          @click="emit('update:open', false)"
+        >
+          Annuler
+        </UButton>
+        <UButton
+          :loading="submitting"
+          icon="i-lucide-check"
+          @click="onSubmit"
+        >
           Créer le compte
         </UButton>
       </div>

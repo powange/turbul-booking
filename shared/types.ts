@@ -83,25 +83,25 @@ export interface Wall {
   updatedAt: string
 }
 
-export type RealtimeEvent =
-  | 'caravan:created'
-  | 'caravan:updated'
-  | 'caravan:deleted'
-  | 'bed:created'
-  | 'bed:updated'
-  | 'bed:deleted'
-  | 'booking:created'
-  | 'booking:deleted'
-  | 'guest:created'
-  | 'guest:updated'
-  | 'zone:created'
-  | 'zone:updated'
-  | 'zone:deleted'
-  | 'wall:created'
-  | 'wall:updated'
-  | 'wall:deleted'
-  | 'unavailability:created'
-  | 'unavailability:deleted'
+export type RealtimeEvent
+  = | 'caravan:created'
+    | 'caravan:updated'
+    | 'caravan:deleted'
+    | 'bed:created'
+    | 'bed:updated'
+    | 'bed:deleted'
+    | 'booking:created'
+    | 'booking:deleted'
+    | 'guest:created'
+    | 'guest:updated'
+    | 'zone:created'
+    | 'zone:updated'
+    | 'zone:deleted'
+    | 'wall:created'
+    | 'wall:updated'
+    | 'wall:deleted'
+    | 'unavailability:created'
+    | 'unavailability:deleted'
 
 export interface RealtimeMessage<T = unknown> {
   event: RealtimeEvent

@@ -142,7 +142,9 @@ async function performImport() {
 <template>
   <UContainer class="py-8 space-y-6">
     <div>
-      <h1 class="text-2xl font-semibold">Import / Export</h1>
+      <h1 class="text-2xl font-semibold">
+        Import / Export
+      </h1>
       <p class="text-sm text-muted mt-1">
         Sauvegarde et restauration des données du plan, hôtes et réservations.
       </p>
@@ -152,7 +154,9 @@ async function performImport() {
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-lucide-download" />
-          <h2 class="text-lg font-semibold">Exporter</h2>
+          <h2 class="text-lg font-semibold">
+            Exporter
+          </h2>
         </div>
       </template>
 
@@ -186,7 +190,9 @@ async function performImport() {
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-lucide-upload" />
-          <h2 class="text-lg font-semibold">Importer</h2>
+          <h2 class="text-lg font-semibold">
+            Importer
+          </h2>
         </div>
       </template>
 
@@ -206,12 +212,20 @@ async function performImport() {
           @change="onFileChange"
         >
 
-        <div v-if="importFileName" class="text-sm text-muted">
+        <div
+          v-if="importFileName"
+          class="text-sm text-muted"
+        >
           Fichier chargé : <span class="font-medium text-default">{{ importFileName }}</span>
         </div>
 
-        <div v-if="counts" class="space-y-2">
-          <p class="text-sm font-medium">Contenu détecté :</p>
+        <div
+          v-if="counts"
+          class="space-y-2"
+        >
+          <p class="text-sm font-medium">
+            Contenu détecté :
+          </p>
           <div class="space-y-2 ml-1">
             <div
               v-for="s in SECTIONS"
@@ -244,14 +258,20 @@ async function performImport() {
       </div>
     </UCard>
 
-    <UModal v-model:open="confirmOpen" title="Confirmer l'import">
+    <UModal
+      v-model:open="confirmOpen"
+      title="Confirmer l'import"
+    >
       <template #body>
         <p class="mb-3">
           Vous allez <strong>supprimer entièrement</strong> les données existantes des sections suivantes
           puis les remplacer par le contenu du fichier :
         </p>
         <ul class="list-disc list-inside mb-3 space-y-1">
-          <li v-for="key in [...importSelected]" :key="key">
+          <li
+            v-for="key in [...importSelected]"
+            :key="key"
+          >
             <span class="font-medium">{{ SECTIONS.find(s => s.key === key)?.label }}</span>
             <span class="text-muted"> ({{ counts?.[key] ?? 0 }} entrées)</span>
           </li>
@@ -262,10 +282,18 @@ async function performImport() {
       </template>
       <template #footer>
         <div class="flex justify-end gap-2">
-          <UButton color="neutral" variant="ghost" @click="confirmOpen = false">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="confirmOpen = false"
+          >
             Annuler
           </UButton>
-          <UButton color="error" :loading="importing" @click="performImport">
+          <UButton
+            color="error"
+            :loading="importing"
+            @click="performImport"
+          >
             Confirmer l'import
           </UButton>
         </div>

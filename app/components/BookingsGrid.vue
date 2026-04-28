@@ -59,25 +59,43 @@ function bedRowClass(bookings: Booking[], capacity: number) {
     <table class="w-full text-sm border-collapse">
       <thead class="bg-elevated sticky top-0 z-10">
         <tr>
-          <th class="text-left px-3 py-2 sticky left-0 bg-elevated z-20 min-w-[140px]">Caravane</th>
-          <th class="text-left px-3 py-2 sticky left-[140px] bg-elevated z-20 min-w-[120px]">Lit</th>
-          <th class="text-center px-2 py-2 w-12">Cap.</th>
+          <th class="text-left px-3 py-2 sticky left-0 bg-elevated z-20 min-w-[140px]">
+            Caravane
+          </th>
+          <th class="text-left px-3 py-2 sticky left-[140px] bg-elevated z-20 min-w-[120px]">
+            Lit
+          </th>
+          <th class="text-center px-2 py-2 w-12">
+            Cap.
+          </th>
           <th
             v-for="d in dates"
             :key="d"
             class="text-center px-2 py-2 min-w-[110px]"
             :class="{ 'bg-muted': isWeekend(d), 'ring-2 ring-inset ring-primary/40': isToday(d) }"
           >
-            <div class="text-xs uppercase text-muted">{{ formatDayShort(d) }}</div>
-            <div class="font-semibold">{{ formatDayNum(d) }}</div>
+            <div class="text-xs uppercase text-muted">
+              {{ formatDayShort(d) }}
+            </div>
+            <div class="font-semibold">
+              {{ formatDayNum(d) }}
+            </div>
           </th>
         </tr>
       </thead>
       <tbody>
-        <template v-for="caravan in caravans" :key="caravan.id">
+        <template
+          v-for="caravan in caravans"
+          :key="caravan.id"
+        >
           <tr v-if="caravan.beds.length === 0">
-            <td class="px-3 py-2 sticky left-0 bg-default font-medium">{{ caravan.name }}</td>
-            <td colspan="100" class="px-3 py-2 text-muted italic">
+            <td class="px-3 py-2 sticky left-0 bg-default font-medium">
+              {{ caravan.name }}
+            </td>
+            <td
+              colspan="100"
+              class="px-3 py-2 text-muted italic"
+            >
               Aucun lit défini.
             </td>
           </tr>
@@ -104,15 +122,23 @@ function bedRowClass(bookings: Booking[], capacity: number) {
             <td class="px-3 py-2 sticky left-[140px] bg-default border-r border-default">
               {{ bed.label }}
             </td>
-            <td class="text-center px-2 py-2 text-muted">{{ bed.capacity }}</td>
-            <template v-for="d in dates" :key="d">
+            <td class="text-center px-2 py-2 text-muted">
+              {{ bed.capacity }}
+            </td>
+            <template
+              v-for="d in dates"
+              :key="d"
+            >
               <td
                 v-if="unavailabilityFor(caravan.id, d)"
                 class="unav-cell px-1 py-1 cursor-pointer text-center border-r border-default last:border-r-0"
                 :title="unavailabilityFor(caravan.id, d)?.reason || 'Caravane indisponible'"
                 @click="emit('cellClick', caravan, bed, d)"
               >
-                <UIcon name="i-lucide-ban" class="size-5 mx-auto text-error" />
+                <UIcon
+                  name="i-lucide-ban"
+                  class="size-5 mx-auto text-error"
+                />
               </td>
               <td
                 v-else
@@ -120,8 +146,16 @@ function bedRowClass(bookings: Booking[], capacity: number) {
                 :class="bedRowClass(bookingsFor(bed.id, d), bed.capacity)"
                 @click="emit('cellClick', caravan, bed, d)"
               >
-                <div v-if="bookingsFor(bed.id, d).length === 0" class="text-muted">—</div>
-                <div v-else class="space-y-0.5">
+                <div
+                  v-if="bookingsFor(bed.id, d).length === 0"
+                  class="text-muted"
+                >
+                  —
+                </div>
+                <div
+                  v-else
+                  class="space-y-0.5"
+                >
                   <div
                     v-for="b in bookingsFor(bed.id, d)"
                     :key="b.id"
@@ -130,7 +164,10 @@ function bedRowClass(bookings: Booking[], capacity: number) {
                   >
                     {{ b.guest?.firstName }} {{ b.guest?.lastName.charAt(0) }}.
                   </div>
-                  <div v-if="bookingsFor(bed.id, d).length < bed.capacity" class="text-[10px] text-muted">
+                  <div
+                    v-if="bookingsFor(bed.id, d).length < bed.capacity"
+                    class="text-[10px] text-muted"
+                  >
                     +{{ bed.capacity - bookingsFor(bed.id, d).length }} libre{{ bed.capacity - bookingsFor(bed.id, d).length > 1 ? 's' : '' }}
                   </div>
                 </div>

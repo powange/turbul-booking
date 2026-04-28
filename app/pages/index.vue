@@ -313,10 +313,16 @@ async function updateWallPoints(id: string, points: Array<[number, number]>) {
       v-if="isAdmin"
       class="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-default/90 backdrop-blur rounded-full shadow-md px-4 py-2 border border-default"
     >
-      <USwitch v-model="editMode" label="Mode édition" />
+      <USwitch
+        v-model="editMode"
+        label="Mode édition"
+      />
 
       <template v-if="editMode">
-        <USeparator orientation="vertical" class="h-5" />
+        <USeparator
+          orientation="vertical"
+          class="h-5"
+        />
         <template v-if="placeMode">
           <UInput
             v-model="newCaravanName"

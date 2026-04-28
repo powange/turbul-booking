@@ -93,7 +93,9 @@ function printPage() {
   <UContainer class="py-6 space-y-4">
     <div class="flex flex-wrap items-center gap-2 justify-between">
       <div>
-        <h1 class="text-xl font-semibold">Réservations</h1>
+        <h1 class="text-xl font-semibold">
+          Réservations
+        </h1>
         <p class="text-sm text-muted">
           Du {{ formatFullDate(fromIso) }} au {{ formatFullDate(addDaysIso(toIso, -1)) }}
         </p>
@@ -118,12 +120,28 @@ function printPage() {
 
     <div class="flex flex-wrap items-center gap-2 print:hidden">
       <UFieldGroup>
-        <UButton icon="i-lucide-chevron-left" variant="outline" @click="shiftWeek(-1)" />
-        <UButton variant="outline" @click="goToday">Aujourd'hui</UButton>
-        <UButton icon="i-lucide-chevron-right" variant="outline" @click="shiftWeek(1)" />
+        <UButton
+          icon="i-lucide-chevron-left"
+          variant="outline"
+          @click="shiftWeek(-1)"
+        />
+        <UButton
+          variant="outline"
+          @click="goToday"
+        >
+          Aujourd'hui
+        </UButton>
+        <UButton
+          icon="i-lucide-chevron-right"
+          variant="outline"
+          @click="shiftWeek(1)"
+        />
       </UFieldGroup>
 
-      <UInput v-model="selectedIso" type="date" />
+      <UInput
+        v-model="selectedIso"
+        type="date"
+      />
     </div>
 
     <BookingsGrid
@@ -134,8 +152,14 @@ function printPage() {
       @cell-click="onCellClick"
     />
 
-    <p v-if="caravans.length === 0" class="text-sm text-muted">
-      Aucune caravane n'est définie pour le moment. Allez sur le <NuxtLink to="/" class="underline">plan</NuxtLink> pour en ajouter.
+    <p
+      v-if="caravans.length === 0"
+      class="text-sm text-muted"
+    >
+      Aucune caravane n'est définie pour le moment. Allez sur le <NuxtLink
+        to="/"
+        class="underline"
+      >plan</NuxtLink> pour en ajouter.
     </p>
 
     <BookingCellDetailsModal

@@ -94,13 +94,23 @@ const presetColors = [
           class="inline-block w-4 h-4 rounded-sm border border-default flex-shrink-0"
           :style="{ background: wall.color }"
         />
-        <h2 class="font-semibold text-lg truncate">Mur</h2>
+        <h2 class="font-semibold text-lg truncate">
+          Mur
+        </h2>
       </div>
-      <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="emit('close')" />
+      <UButton
+        icon="i-lucide-x"
+        color="neutral"
+        variant="ghost"
+        @click="emit('close')"
+      />
     </div>
 
     <div class="flex-1 overflow-y-auto px-4 py-4 space-y-6">
-      <fieldset :disabled="!canEdit" class="space-y-4">
+      <fieldset
+        :disabled="!canEdit"
+        class="space-y-4"
+      >
         <UFormField label="Couleur">
           <div class="flex items-center gap-3">
             <input
@@ -108,7 +118,10 @@ const presetColors = [
               type="color"
               class="w-10 h-10 rounded border border-default cursor-pointer"
             >
-            <UInput v-model="form.color" class="flex-1" />
+            <UInput
+              v-model="form.color"
+              class="flex-1"
+            />
           </div>
           <div class="flex flex-wrap gap-1.5 mt-2">
             <button
@@ -134,19 +147,28 @@ const presetColors = [
           >
         </UFormField>
 
-        <p v-if="canEdit" class="text-xs text-muted flex items-center gap-1.5">
+        <p
+          v-if="canEdit"
+          class="text-xs text-muted flex items-center gap-1.5"
+        >
           <UIcon
             v-if="savingColor || savingThickness"
             name="i-lucide-loader-circle"
             class="animate-spin"
           />
-          <UIcon v-else name="i-lucide-info" />
+          <UIcon
+            v-else
+            name="i-lucide-info"
+          />
           Glissez les sommets du mur sur la carte pour le modifier.
         </p>
       </fieldset>
     </div>
 
-    <div v-if="canEdit" class="px-4 py-3 border-t border-default">
+    <div
+      v-if="canEdit"
+      class="px-4 py-3 border-t border-default"
+    >
       <UButton
         block
         color="error"

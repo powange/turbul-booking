@@ -54,19 +54,30 @@ async function cancel(b: Booking) {
           <span v-if="remaining > 0">· {{ remaining }} libre{{ remaining > 1 ? 's' : '' }}</span>
         </p>
 
-        <div v-if="bookings.length === 0" class="text-sm text-muted py-2">
+        <div
+          v-if="bookings.length === 0"
+          class="text-sm text-muted py-2"
+        >
           Aucun occupant pour cette nuit.
         </div>
 
-        <ul v-else class="space-y-2">
+        <ul
+          v-else
+          class="space-y-2"
+        >
           <li
             v-for="b in bookings"
             :key="b.id"
             class="flex items-center justify-between rounded-md border border-default p-3"
           >
             <div>
-              <div class="font-medium">{{ b.guest?.lastName.toUpperCase() }} {{ b.guest?.firstName }}</div>
-              <div v-if="b.guest?.email || b.guest?.phone" class="text-xs text-muted">
+              <div class="font-medium">
+                {{ b.guest?.lastName.toUpperCase() }} {{ b.guest?.firstName }}
+              </div>
+              <div
+                v-if="b.guest?.email || b.guest?.phone"
+                class="text-xs text-muted"
+              >
                 <span v-if="b.guest?.email">{{ b.guest.email }}</span>
                 <span v-if="b.guest?.email && b.guest?.phone"> · </span>
                 <span v-if="b.guest?.phone">{{ b.guest.phone }}</span>
@@ -87,7 +98,12 @@ async function cancel(b: Booking) {
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
-        <UButton variant="ghost" @click="emit('update:open', false)">Fermer</UButton>
+        <UButton
+          variant="ghost"
+          @click="emit('update:open', false)"
+        >
+          Fermer
+        </UButton>
         <UButton
           v-if="canEdit && remaining > 0"
           icon="i-lucide-plus"

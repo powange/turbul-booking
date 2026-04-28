@@ -12,25 +12,25 @@ export function removePeer(peer: Peer) {
   peers.delete(peer)
 }
 
-export type RealtimeEvent =
-  | 'caravan:created'
-  | 'caravan:updated'
-  | 'caravan:deleted'
-  | 'bed:created'
-  | 'bed:updated'
-  | 'bed:deleted'
-  | 'booking:created'
-  | 'booking:deleted'
-  | 'guest:created'
-  | 'guest:updated'
-  | 'zone:created'
-  | 'zone:updated'
-  | 'zone:deleted'
-  | 'wall:created'
-  | 'wall:updated'
-  | 'wall:deleted'
-  | 'unavailability:created'
-  | 'unavailability:deleted'
+export type RealtimeEvent
+  = | 'caravan:created'
+    | 'caravan:updated'
+    | 'caravan:deleted'
+    | 'bed:created'
+    | 'bed:updated'
+    | 'bed:deleted'
+    | 'booking:created'
+    | 'booking:deleted'
+    | 'guest:created'
+    | 'guest:updated'
+    | 'zone:created'
+    | 'zone:updated'
+    | 'zone:deleted'
+    | 'wall:created'
+    | 'wall:updated'
+    | 'wall:deleted'
+    | 'unavailability:created'
+    | 'unavailability:deleted'
 
 export function broadcast(event: RealtimeEvent, payload: unknown) {
   const message = JSON.stringify({ event, payload })

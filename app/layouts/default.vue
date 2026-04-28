@@ -33,8 +33,14 @@ const userMenu = computed(() => [
   <UApp>
     <UHeader>
       <template #left>
-        <NuxtLink to="/" class="flex items-center gap-2 font-semibold">
-          <UIcon name="i-lucide-tent" class="text-primary" />
+        <NuxtLink
+          to="/"
+          class="flex items-center gap-2 font-semibold"
+        >
+          <UIcon
+            name="i-lucide-tent"
+            class="text-primary"
+          />
           <span>Turbul Booking</span>
         </NuxtLink>
       </template>
@@ -54,7 +60,10 @@ const userMenu = computed(() => [
       </template>
 
       <template #body>
-        <UNavigationMenu :items="navItems" orientation="vertical" />
+        <UNavigationMenu
+          :items="navItems"
+          orientation="vertical"
+        />
       </template>
     </UHeader>
 

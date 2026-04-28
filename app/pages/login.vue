@@ -64,7 +64,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       class="space-y-4"
       @submit="onSubmit"
     >
-      <UFormField label="Email" name="email" required>
+      <UFormField
+        label="Email"
+        name="email"
+        required
+      >
         <UInput
           v-model="state.email"
           type="email"
@@ -73,7 +77,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         />
       </UFormField>
 
-      <UFormField label="Mot de passe" name="password" required>
+      <UFormField
+        label="Mot de passe"
+        name="password"
+        required
+      >
         <UInput
           v-model="state.password"
           type="password"

@@ -199,7 +199,10 @@ const guestOptions = computed(() =>
     <template #body>
       <div class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
-          <UFormField label="Caravane" required>
+          <UFormField
+            label="Caravane"
+            required
+          >
             <USelect
               v-model="state.caravanId"
               :items="caravanOptions"
@@ -207,7 +210,10 @@ const guestOptions = computed(() =>
               class="w-full"
             />
           </UFormField>
-          <UFormField label="Lit" required>
+          <UFormField
+            label="Lit"
+            required
+          >
             <USelect
               v-model="state.bedId"
               :items="bedOptions"
@@ -219,11 +225,26 @@ const guestOptions = computed(() =>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <UFormField label="Arrivée" required>
-            <UInput v-model="state.from" type="date" class="w-full" />
+          <UFormField
+            label="Arrivée"
+            required
+          >
+            <UInput
+              v-model="state.from"
+              type="date"
+              class="w-full"
+            />
           </UFormField>
-          <UFormField label="Départ (matin)" required help="Date du jour de départ (la nuit précédente est incluse)">
-            <UInput v-model="state.to" type="date" class="w-full" />
+          <UFormField
+            label="Départ (matin)"
+            required
+            help="Date du jour de départ (la nuit précédente est incluse)"
+          >
+            <UInput
+              v-model="state.to"
+              type="date"
+              class="w-full"
+            />
           </UFormField>
         </div>
 
@@ -248,14 +269,22 @@ const guestOptions = computed(() =>
               @update:model-value="onSearchInput"
             />
           </UFormField>
-          <div v-if="guestSearchLoading" class="text-sm text-muted">Recherche...</div>
+          <div
+            v-if="guestSearchLoading"
+            class="text-sm text-muted"
+          >
+            Recherche...
+          </div>
           <div
             v-else-if="guestOptions.length === 0"
             class="text-sm text-muted"
           >
             Aucun hôte trouvé. Passez à "Nouvel hôte" pour en créer un.
           </div>
-          <ul v-else class="max-h-48 overflow-y-auto border border-default rounded-md divide-y divide-default">
+          <ul
+            v-else
+            class="max-h-48 overflow-y-auto border border-default rounded-md divide-y divide-default"
+          >
             <li
               v-for="g in guestOptions"
               :key="g.value"
@@ -270,19 +299,38 @@ const guestOptions = computed(() =>
 
         <template v-else>
           <div class="grid grid-cols-2 gap-3">
-            <UFormField label="Prénom" required>
-              <UInput v-model="state.guest.firstName" class="w-full" />
+            <UFormField
+              label="Prénom"
+              required
+            >
+              <UInput
+                v-model="state.guest.firstName"
+                class="w-full"
+              />
             </UFormField>
-            <UFormField label="Nom" required>
-              <UInput v-model="state.guest.lastName" class="w-full" />
+            <UFormField
+              label="Nom"
+              required
+            >
+              <UInput
+                v-model="state.guest.lastName"
+                class="w-full"
+              />
             </UFormField>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <UFormField label="Email">
-              <UInput v-model="state.guest.email" type="email" class="w-full" />
+              <UInput
+                v-model="state.guest.email"
+                type="email"
+                class="w-full"
+              />
             </UFormField>
             <UFormField label="Téléphone">
-              <UInput v-model="state.guest.phone" class="w-full" />
+              <UInput
+                v-model="state.guest.phone"
+                class="w-full"
+              />
             </UFormField>
           </div>
         </template>
@@ -291,8 +339,17 @@ const guestOptions = computed(() =>
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
-        <UButton variant="ghost" @click="emit('update:open', false)">Annuler</UButton>
-        <UButton :loading="submitting" icon="i-lucide-check" @click="onSubmit">
+        <UButton
+          variant="ghost"
+          @click="emit('update:open', false)"
+        >
+          Annuler
+        </UButton>
+        <UButton
+          :loading="submitting"
+          icon="i-lucide-check"
+          @click="onSubmit"
+        >
           Enregistrer
         </UButton>
       </div>

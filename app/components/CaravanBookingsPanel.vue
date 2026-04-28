@@ -180,18 +180,28 @@ const isBlockedNow = computed(() => {
   <div class="flex flex-col h-full">
     <div class="px-4 py-3 border-b border-default flex items-center justify-between">
       <div class="min-w-0">
-        <h2 class="font-semibold text-lg truncate">{{ caravan.name }}</h2>
+        <h2 class="font-semibold text-lg truncate">
+          {{ caravan.name }}
+        </h2>
         <p class="text-xs text-muted">
           {{ totalUpcoming }} nuit{{ totalUpcoming > 1 ? 's' : '' }} à venir
           · {{ caravan.beds.length }} lit{{ caravan.beds.length > 1 ? 's' : '' }}
         </p>
       </div>
-      <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="emit('close')" />
+      <UButton
+        icon="i-lucide-x"
+        color="neutral"
+        variant="ghost"
+        @click="emit('close')"
+      />
     </div>
 
     <div class="px-4 py-3 border-b border-default flex items-center justify-between gap-3">
       <div class="flex items-center gap-2 text-sm">
-        <UIcon name="i-lucide-zap" class="text-muted" />
+        <UIcon
+          name="i-lucide-zap"
+          class="text-muted"
+        />
         <span>Raccordée à l'électricité</span>
         <UIcon
           v-if="savingElectricity"
@@ -206,7 +216,10 @@ const isBlockedNow = computed(() => {
     </div>
 
     <div class="flex-1 overflow-y-auto px-4 py-4 space-y-5">
-      <p v-if="caravan.beds.length === 0" class="text-sm text-muted">
+      <p
+        v-if="caravan.beds.length === 0"
+        class="text-sm text-muted"
+      >
         Cette caravane n'a pas encore de lit défini.
       </p>
 
@@ -217,7 +230,10 @@ const isBlockedNow = computed(() => {
       >
         <div class="flex items-center justify-between gap-2">
           <h3 class="text-sm font-semibold flex items-center gap-2">
-            <UIcon name="i-lucide-bed" class="text-muted" />
+            <UIcon
+              name="i-lucide-bed"
+              class="text-muted"
+            />
             {{ group.bed.label }}
             <span class="text-xs text-muted font-normal">
               ({{ group.bed.capacity }} place{{ group.bed.capacity > 1 ? 's' : '' }})
@@ -239,19 +255,28 @@ const isBlockedNow = computed(() => {
           </div>
         </div>
 
-        <ul v-if="group.bookings.length" class="space-y-1.5">
+        <ul
+          v-if="group.bookings.length"
+          class="space-y-1.5"
+        >
           <li
             v-for="b in group.bookings"
             :key="b.id"
             class="flex items-center justify-between gap-2 rounded-md border border-default px-3 py-2 text-sm"
           >
             <span class="truncate">{{ formatFullDate(b.date) }}</span>
-            <span v-if="b.guest" class="text-muted text-xs whitespace-nowrap">
+            <span
+              v-if="b.guest"
+              class="text-muted text-xs whitespace-nowrap"
+            >
               {{ b.guest.lastName.toUpperCase() }} {{ b.guest.firstName }}
             </span>
           </li>
         </ul>
-        <p v-else class="text-xs text-muted italic">
+        <p
+          v-else
+          class="text-xs text-muted italic"
+        >
           Aucune nuit réservée à venir.
         </p>
       </section>
@@ -262,7 +287,10 @@ const isBlockedNow = computed(() => {
       <section class="space-y-2">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-semibold flex items-center gap-2">
-            <UIcon name="i-lucide-ban" class="text-muted" />
+            <UIcon
+              name="i-lucide-ban"
+              class="text-muted"
+            />
             Indisponibilités
           </h3>
           <UButton
@@ -276,29 +304,66 @@ const isBlockedNow = computed(() => {
           </UButton>
         </div>
 
-        <div v-if="showUnavForm" class="rounded-md border border-default p-3 space-y-3 bg-elevated">
+        <div
+          v-if="showUnavForm"
+          class="rounded-md border border-default p-3 space-y-3 bg-elevated"
+        >
           <div class="grid grid-cols-2 gap-2">
-            <UFormField label="Du" required>
-              <UInput v-model="unavForm.from" type="date" size="sm" class="w-full" />
+            <UFormField
+              label="Du"
+              required
+            >
+              <UInput
+                v-model="unavForm.from"
+                type="date"
+                size="sm"
+                class="w-full"
+              />
             </UFormField>
-            <UFormField label="Au (exclu)" required help="Premier jour redevenu disponible">
-              <UInput v-model="unavForm.to" type="date" size="sm" class="w-full" />
+            <UFormField
+              label="Au (exclu)"
+              required
+              help="Premier jour redevenu disponible"
+            >
+              <UInput
+                v-model="unavForm.to"
+                type="date"
+                size="sm"
+                class="w-full"
+              />
             </UFormField>
           </div>
           <UFormField label="Motif (optionnel)">
-            <UInput v-model="unavForm.reason" placeholder="ex : Maintenance" size="sm" class="w-full" />
+            <UInput
+              v-model="unavForm.reason"
+              placeholder="ex : Maintenance"
+              size="sm"
+              class="w-full"
+            />
           </UFormField>
           <div class="flex justify-end gap-2">
-            <UButton size="xs" variant="ghost" :disabled="creatingUnav" @click="showUnavForm = false">
+            <UButton
+              size="xs"
+              variant="ghost"
+              :disabled="creatingUnav"
+              @click="showUnavForm = false"
+            >
               Annuler
             </UButton>
-            <UButton size="xs" :loading="creatingUnav" @click="createUnavailability">
+            <UButton
+              size="xs"
+              :loading="creatingUnav"
+              @click="createUnavailability"
+            >
               Bloquer
             </UButton>
           </div>
         </div>
 
-        <ul v-if="caravanUnavailabilities.length" class="space-y-1.5">
+        <ul
+          v-if="caravanUnavailabilities.length"
+          class="space-y-1.5"
+        >
           <li
             v-for="u in caravanUnavailabilities"
             :key="u.id"
@@ -308,7 +373,10 @@ const isBlockedNow = computed(() => {
               <div class="truncate">
                 Du {{ formatFullDate(u.from) }} au {{ formatFullDate(addDaysIso(u.to, -1)) }}
               </div>
-              <div v-if="u.reason" class="text-xs text-muted truncate">
+              <div
+                v-if="u.reason"
+                class="text-xs text-muted truncate"
+              >
                 {{ u.reason }}
               </div>
             </div>
@@ -324,13 +392,19 @@ const isBlockedNow = computed(() => {
             />
           </li>
         </ul>
-        <p v-else-if="!showUnavForm" class="text-xs text-muted italic">
+        <p
+          v-else-if="!showUnavForm"
+          class="text-xs text-muted italic"
+        >
           Aucune indisponibilité.
         </p>
       </section>
     </div>
 
-    <div v-if="canManage && caravan.beds.length > 0" class="px-4 py-3 border-t border-default">
+    <div
+      v-if="canManage && caravan.beds.length > 0"
+      class="px-4 py-3 border-t border-default"
+    >
       <UButton
         block
         icon="i-lucide-plus"

@@ -6,8 +6,8 @@ export interface CaravanGeometry {
   lat: number
   lng: number
   rotation: number // degrés, 0 = grand axe pointant le Nord
-  width: number    // mètres (perpendiculaire au grand axe)
-  length: number   // mètres (le long du grand axe)
+  width: number // mètres (perpendiculaire au grand axe)
+  length: number // mètres (le long du grand axe)
 }
 
 /**

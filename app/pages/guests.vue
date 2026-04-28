@@ -111,8 +111,12 @@ const totalNights = computed(() => selected.value?.bookings.length ?? 0)
   <UContainer class="py-6 space-y-4">
     <div class="flex items-center justify-between gap-3 flex-wrap">
       <div>
-        <h1 class="text-xl font-semibold">Hôtes</h1>
-        <p class="text-sm text-muted">{{ guests.length }} résultat{{ guests.length > 1 ? 's' : '' }}{{ guests.length === 50 ? ' (50 max)' : '' }}</p>
+        <h1 class="text-xl font-semibold">
+          Hôtes
+        </h1>
+        <p class="text-sm text-muted">
+          {{ guests.length }} résultat{{ guests.length > 1 ? 's' : '' }}{{ guests.length === 50 ? ' (50 max)' : '' }}
+        </p>
       </div>
       <UInput
         v-model="query"
@@ -127,15 +131,26 @@ const totalNights = computed(() => selected.value?.bookings.length ?? 0)
       <table class="w-full text-sm">
         <thead class="bg-elevated">
           <tr>
-            <th class="text-left px-3 py-2">Nom</th>
-            <th class="text-left px-3 py-2">Prénom</th>
-            <th class="text-left px-3 py-2 hidden sm:table-cell">Email</th>
-            <th class="text-left px-3 py-2 hidden md:table-cell">Téléphone</th>
+            <th class="text-left px-3 py-2">
+              Nom
+            </th>
+            <th class="text-left px-3 py-2">
+              Prénom
+            </th>
+            <th class="text-left px-3 py-2 hidden sm:table-cell">
+              Email
+            </th>
+            <th class="text-left px-3 py-2 hidden md:table-cell">
+              Téléphone
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="!loading && guests.length === 0">
-            <td colspan="4" class="px-3 py-6 text-center text-muted">
+            <td
+              colspan="4"
+              class="px-3 py-6 text-center text-muted"
+            >
               Aucun hôte n'a encore été enregistré.
             </td>
           </tr>
@@ -145,10 +160,18 @@ const totalNights = computed(() => selected.value?.bookings.length ?? 0)
             class="border-t border-default cursor-pointer hover:bg-muted/40"
             @click="open(g)"
           >
-            <td class="px-3 py-2 font-medium">{{ g.lastName.toUpperCase() }}</td>
-            <td class="px-3 py-2">{{ g.firstName }}</td>
-            <td class="px-3 py-2 text-muted hidden sm:table-cell">{{ g.email ?? '—' }}</td>
-            <td class="px-3 py-2 text-muted hidden md:table-cell">{{ g.phone ?? '—' }}</td>
+            <td class="px-3 py-2 font-medium">
+              {{ g.lastName.toUpperCase() }}
+            </td>
+            <td class="px-3 py-2">
+              {{ g.firstName }}
+            </td>
+            <td class="px-3 py-2 text-muted hidden sm:table-cell">
+              {{ g.email ?? '—' }}
+            </td>
+            <td class="px-3 py-2 text-muted hidden md:table-cell">
+              {{ g.phone ?? '—' }}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -162,26 +185,61 @@ const totalNights = computed(() => selected.value?.bookings.length ?? 0)
         <div class="flex flex-col h-full">
           <div class="px-4 py-3 border-b border-default flex items-center justify-between">
             <div v-if="selected">
-              <h2 class="font-semibold text-lg">{{ selected.lastName.toUpperCase() }} {{ selected.firstName }}</h2>
+              <h2 class="font-semibold text-lg">
+                {{ selected.lastName.toUpperCase() }} {{ selected.firstName }}
+              </h2>
               <p class="text-xs text-muted">
                 {{ totalNights }} nuit{{ totalNights > 1 ? 's' : '' }} cumulée{{ totalNights > 1 ? 's' : '' }}
               </p>
             </div>
-            <UButton icon="i-lucide-x" variant="ghost" color="neutral" @click="detailOpen = false" />
+            <UButton
+              icon="i-lucide-x"
+              variant="ghost"
+              color="neutral"
+              @click="detailOpen = false"
+            />
           </div>
 
           <div class="flex-1 overflow-y-auto p-4 space-y-4">
-            <div v-if="loadingDetail" class="text-muted text-sm">Chargement...</div>
+            <div
+              v-if="loadingDetail"
+              class="text-muted text-sm"
+            >
+              Chargement...
+            </div>
             <template v-else-if="selected">
-              <div v-if="selected.email || selected.phone" class="text-sm text-muted space-y-0.5">
-                <div v-if="selected.email"><UIcon name="i-lucide-mail" class="inline mr-1" />{{ selected.email }}</div>
-                <div v-if="selected.phone"><UIcon name="i-lucide-phone" class="inline mr-1" />{{ selected.phone }}</div>
+              <div
+                v-if="selected.email || selected.phone"
+                class="text-sm text-muted space-y-0.5"
+              >
+                <div v-if="selected.email">
+                  <UIcon
+                    name="i-lucide-mail"
+                    class="inline mr-1"
+                  />{{ selected.email }}
+                </div>
+                <div v-if="selected.phone">
+                  <UIcon
+                    name="i-lucide-phone"
+                    class="inline mr-1"
+                  />{{ selected.phone }}
+                </div>
               </div>
 
               <div>
-                <h3 class="text-sm font-semibold text-muted mb-2">Séjours</h3>
-                <p v-if="stays.length === 0" class="text-sm text-muted">Aucun séjour enregistré.</p>
-                <ul v-else class="space-y-2">
+                <h3 class="text-sm font-semibold text-muted mb-2">
+                  Séjours
+                </h3>
+                <p
+                  v-if="stays.length === 0"
+                  class="text-sm text-muted"
+                >
+                  Aucun séjour enregistré.
+                </p>
+                <ul
+                  v-else
+                  class="space-y-2"
+                >
                   <li
                     v-for="(s, i) in stays"
                     :key="i"
@@ -189,7 +247,14 @@ const totalNights = computed(() => selected.value?.bookings.length ?? 0)
                   >
                     <div class="font-medium">
                       {{ s.caravan }}
-                      <UBadge v-if="s.caravanDeleted" label="retirée" size="xs" color="neutral" variant="subtle" class="ml-1" />
+                      <UBadge
+                        v-if="s.caravanDeleted"
+                        label="retirée"
+                        size="xs"
+                        color="neutral"
+                        variant="subtle"
+                        class="ml-1"
+                      />
                       — {{ s.bed }}
                     </div>
                     <div class="text-muted text-xs mt-0.5">

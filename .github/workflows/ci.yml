@@ -6,12 +6,27 @@ jobs:
   ci:
     runs-on: ${{ matrix.os }}
 
-    # Variables non-sensibles utilisées par `prisma generate` (postinstall)
-    # et par les commandes Prisma qui chargent prisma.config.ts. Aucun
-    # accès réel à une base n'est tenté en CI : on fournit juste une URL
-    # syntaxiquement valide pour que la config se résolve.
+    # `DATABASE_URL` sert à `prisma generate` (postinstall) et à `prisma
+    # migrate deploy` avant les tests d'intégration. `TEST_DATABASE_URL`
+    # pointe vers le même service mais reste explicite pour les tests.
     env:
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DATABASE_URL: postgresql://turbul:turbul@localhost:5432/turbul_test
+      TEST_DATABASE_URL: postgresql://turbul:turbul@localhost:5432/turbul_test
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: turbul
+          POSTGRES_PASSWORD: turbul
+          POSTGRES_DB: turbul_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U turbul"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     strategy:
       matrix:
@@ -37,5 +52,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Tests
+      - name: Apply Prisma migrations
+        run: npx prisma migrate deploy
+
+      - name: Unit tests
         run: npm test
+
+      - name: Integration tests
+        run: npm run test:integration

@@ -83,6 +83,10 @@ function shiftWeek(delta: number) {
 function goToday() {
   selectedIso.value = todayIso()
 }
+
+function printPage() {
+  if (import.meta.client) window.print()
+}
 </script>
 
 <template>
@@ -94,16 +98,25 @@ function goToday() {
           Du {{ formatFullDate(fromIso) }} au {{ formatFullDate(addDaysIso(toIso, -1)) }}
         </p>
       </div>
-      <UButton
-        v-if="canEdit"
-        icon="i-lucide-plus"
-        @click="openCreateBlank"
-      >
-        Nouvelle réservation
-      </UButton>
+      <div class="flex items-center gap-2 print:hidden">
+        <UButton
+          variant="outline"
+          icon="i-lucide-printer"
+          @click="printPage"
+        >
+          Imprimer / PDF
+        </UButton>
+        <UButton
+          v-if="canEdit"
+          icon="i-lucide-plus"
+          @click="openCreateBlank"
+        >
+          Nouvelle réservation
+        </UButton>
+      </div>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2 print:hidden">
       <UFieldGroup>
         <UButton icon="i-lucide-chevron-left" variant="outline" @click="shiftWeek(-1)" />
         <UButton variant="outline" @click="goToday">Aujourd'hui</UButton>

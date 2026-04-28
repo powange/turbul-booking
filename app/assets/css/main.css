@@ -27,3 +27,101 @@
 h1, h2, h3 {
   color: var(--brand-heading);
 }
+
+/* ============================================================
+   Impression — utilisé en priorité sur la page /bookings pour
+   exporter une semaine en PDF via la boîte de dialogue navigateur.
+   ============================================================ */
+@media print {
+  /* Format paysage par défaut : la grille de 7 jours + colonnes
+     fixes ne tient pas en portrait sur A4. */
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  /* Cacher la chrome de l'app : header, modales, toasts. */
+  body > div > header,
+  [role="dialog"],
+  [role="alertdialog"],
+  .leaflet-control-container {
+    display: none !important;
+  }
+
+  /* Reset visuel : fond blanc + texte noir, pour que le mode dark ne
+     produise pas un PDF avec du texte invisible (gris clair sur blanc). */
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
+  table, th, td, tr {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Empêche les containers Nuxt UI de garder du padding superflu. */
+  main, [class*="UMain"], [class*="UContainer"] {
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+  }
+
+  /* Grille des réservations : compactée et autorisée à scinder en pages.
+     `table-layout: auto` permet aux colonnes "fixes" (Caravane / Lit / Cap)
+     de se réduire à la largeur de leur contenu via le pattern
+     `width: 1%; white-space: nowrap`. Les colonnes de dates partagent
+     ensuite le reste de la largeur. */
+  table {
+    font-size: 9px;
+    width: 100% !important;
+    table-layout: auto !important;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+
+  /* Annule les min-width inline (Caravane 140px, Lit 120px, dates 110px)
+     qui font déborder le tableau au-delà de la largeur A4 paysage. */
+  th, td {
+    min-width: 0 !important;
+    word-break: break-word;
+    padding: 4px 3px !important;
+  }
+
+  /* Caravane / Lit / Cap : largeur strictement nécessaire au contenu. */
+  th:nth-child(1), td:nth-child(1),
+  th:nth-child(2), td:nth-child(2),
+  th:nth-child(3), td:nth-child(3) {
+    width: 1% !important;
+    white-space: nowrap;
+  }
+
+  /* Les colonnes sticky n'ont pas de sens à l'impression et créent
+     un offset horizontal indésirable. */
+  .sticky {
+    position: static !important;
+    left: auto !important;
+  }
+
+  /* Wrapper : pas de scroll horizontal, et coins droits (les coins
+     arrondis ne servent à rien sur papier). On garde la bordure. */
+  .overflow-x-auto {
+    overflow: visible !important;
+    border-radius: 0 !important;
+  }
+
+  /* Bordures noires explicites sur la table et chaque cellule pour un
+     rendu papier classique (sinon seules les bordures internes héritées
+     des classes Tailwind apparaissent). */
+  table {
+    border: 1px solid #000 !important;
+  }
+  th, td {
+    border: 1px solid #000 !important;
+    /* Pas de surlignage du jour courant (ring Tailwind) sur le PDF. */
+    box-shadow: none !important;
+  }
+}

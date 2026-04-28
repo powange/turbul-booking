@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import '@geoman-io/leaflet-geoman-free'
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 import { caravanCorners } from '~/utils/geo'
+import { PLAN_COLORS, CARAVAN_PIN_CLASSES } from '~/utils/planColors'
 import type { Caravan, Zone, Wall } from '~~/shared/types'
 
 const props = defineProps<{
@@ -53,18 +54,23 @@ let editingZoneId: string | null = null
 let editingWallId: string | null = null
 
 function styleFor(c: Caravan, selected: boolean) {
+  const palette = selected
+    ? PLAN_COLORS.caravan.selected
+    : c.hasElectricity
+      ? PLAN_COLORS.caravan.powered
+      : PLAN_COLORS.caravan.neutral
   return {
-    color: selected ? '#0ea5e9' : c.hasElectricity ? '#16a34a' : '#64748b',
+    color: palette.stroke,
     weight: selected ? 3 : 2,
-    fillColor: selected ? '#0ea5e9' : c.hasElectricity ? '#22c55e' : '#94a3b8',
+    fillColor: palette.fill,
     fillOpacity: 0.45
   }
 }
 
 function makeIcon(c: Caravan, selected: boolean): L.DivIcon {
   const colorClass = selected
-    ? 'bg-sky-500 border-sky-700'
-    : c.hasElectricity ? 'bg-green-500 border-green-700' : 'bg-slate-500 border-slate-700'
+    ? CARAVAN_PIN_CLASSES.selected
+    : c.hasElectricity ? CARAVAN_PIN_CLASSES.powered : CARAVAN_PIN_CLASSES.neutral
   return L.divIcon({
     className: 'caravan-marker',
     html: `<div class="caravan-pin ${colorClass}" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>`,

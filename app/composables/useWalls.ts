@@ -1,42 +1,23 @@
 import type { Wall } from '~~/shared/types'
+import { createRealtimeCollection } from './createRealtimeCollection'
 
-const walls = ref<Wall[]>([])
-const isReady = ref(false)
-let realtimeBound = false
-
-function applyEvent(event: string, payload: any) {
-  switch (event) {
-    case 'wall:created': {
-      if (!walls.value.find(w => w.id === payload.id)) {
-        walls.value = [...walls.value, payload]
-      }
-      break
-    }
-    case 'wall:updated': {
-      walls.value = walls.value.map(w => w.id === payload.id ? payload : w)
-      break
-    }
-    case 'wall:deleted': {
-      walls.value = walls.value.filter(w => w.id !== payload.id)
-      break
-    }
+const collection = createRealtimeCollection<Wall>({
+  fetchUrl: '/api/walls',
+  events: {
+    created: 'wall:created',
+    updated: 'wall:updated',
+    deleted: 'wall:deleted'
   }
-}
+})
 
 export function useWalls() {
-  async function refresh() {
-    const headers = import.meta.server ? useRequestHeaders(['cookie']) : undefined
-    const data = await $fetch<Wall[]>('/api/walls', { headers })
-    walls.value = data
-    isReady.value = true
+  return {
+    walls: collection.items,
+    isReady: collection.isReady,
+    refresh: () => collection.fetch(),
+    ensureRealtime: collection.ensureRealtime,
+    applyCreated: collection.applyCreated,
+    applyUpdated: collection.applyUpdated,
+    applyDeleted: collection.applyDeleted
   }
-
-  function ensureRealtime() {
-    if (realtimeBound || !import.meta.client) return
-    realtimeBound = true
-    const { subscribePermanent } = useRealtime()
-    subscribePermanent(applyEvent)
-  }
-
-  return { walls, isReady, refresh, ensureRealtime }
 }

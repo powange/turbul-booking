@@ -31,6 +31,9 @@ export type RealtimeEvent
     | 'wall:deleted'
     | 'unavailability:created'
     | 'unavailability:deleted'
+    | 'issue:created'
+    | 'issue:updated'
+    | 'issue:deleted'
 
 export function broadcast(event: RealtimeEvent, payload: unknown) {
   const message = JSON.stringify({ event, payload })

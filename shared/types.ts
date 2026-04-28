@@ -64,6 +64,16 @@ export interface CaravanUnavailability {
   createdAt: string
 }
 
+export interface CaravanIssue {
+  id: string
+  caravanId: string
+  label: string
+  createdAt: string
+  createdById: string
+  resolvedAt: string | null
+  resolvedById: string | null
+}
+
 export interface Zone {
   id: string
   name: string
@@ -102,6 +112,9 @@ export type RealtimeEvent
     | 'wall:deleted'
     | 'unavailability:created'
     | 'unavailability:deleted'
+    | 'issue:created'
+    | 'issue:updated'
+    | 'issue:deleted'
 
 export interface RealtimeMessage<T = unknown> {
   event: RealtimeEvent

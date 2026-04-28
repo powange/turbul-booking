@@ -31,8 +31,13 @@ const { zones, isReady: zonesReady, refresh: refreshZones, ensureRealtime: ensur
 const { walls, isReady: wallsReady, refresh: refreshWalls, ensureRealtime: ensureWallsRealtime } = useWalls()
 const { bookings, fetchRange: fetchBookingsRange, ensureRealtime: ensureBookingsRealtime } = useBookings()
 const { unavailabilities, fetchRange: fetchUnavailabilitiesRange, ensureRealtime: ensureUnavailabilitiesRealtime } = useUnavailabilities()
+const { issues, refresh: refreshIssues, ensureRealtime: ensureIssuesRealtime } = useCaravanIssues()
 
-const selectedId = ref<string | null>(null)
+// Deep-link via `?caravan=ID` (depuis la page Maintenance) : la query
+// param hydrate selectedId, qui ouvre le panneau de la caravane correspondante
+// dès que les données sont chargées.
+const route = useRoute()
+const selectedId = ref<string | null>(typeof route.query.caravan === 'string' ? route.query.caravan : null)
 const placeMode = ref(false)
 const creating = ref(false)
 const newCaravanName = ref('')
@@ -168,7 +173,8 @@ await Promise.allSettled([
   refreshZones(),
   refreshWalls(),
   fetchBookingsRange(todayIso(), addDaysIso(todayIso(), 90)),
-  fetchUnavailabilitiesRange(todayIso(), addDaysIso(todayIso(), 90))
+  fetchUnavailabilitiesRange(todayIso(), addDaysIso(todayIso(), 90)),
+  refreshIssues()
 ]).then((results) => {
   for (const r of results) {
     if (r.status === 'rejected') console.error('[index] initial refresh failed', r.reason)
@@ -181,6 +187,7 @@ onMounted(() => {
   ensureWallsRealtime()
   ensureBookingsRealtime()
   ensureUnavailabilitiesRealtime()
+  ensureIssuesRealtime()
 })
 
 function openBookingFromCaravan() {
@@ -461,6 +468,7 @@ async function updateWallPoints(id: string, points: Array<[number, number]>) {
           :caravan="selectedCaravan"
           :bookings="bookings"
           :unavailabilities="unavailabilities"
+          :issues="issues"
           :can-manage="canCreateBooking"
           @close="selectedId = null"
           @add-booking="openBookingFromCaravan"

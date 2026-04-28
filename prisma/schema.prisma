@@ -33,6 +33,8 @@ model User {
   accounts       Account[]
   bookingsCreated Booking[] @relation("BookingCreatedBy")
   unavailabilitiesCreated CaravanUnavailability[] @relation("UnavailabilityCreatedBy")
+  issuesCreated   CaravanIssue[] @relation("IssueCreatedBy")
+  issuesResolved  CaravanIssue[] @relation("IssueResolvedBy")
   auditLogs       AuditLog[]
 }
 
@@ -99,8 +101,29 @@ model Caravan {
 
   beds             Bed[]
   unavailabilities CaravanUnavailability[]
+  issues           CaravanIssue[]
 
   @@index([deletedAt])
+}
+
+// Journal de problèmes / état d'une caravane (to-do list par caravane).
+// Un manager peut ajouter un item, le marquer comme résolu (résolu = on
+// renseigne resolvedAt + resolvedById), réouvrir (mettre à null), ou
+// supprimer définitivement.
+model CaravanIssue {
+  id           String    @id @default(cuid())
+  caravanId    String
+  label        String
+  createdAt    DateTime  @default(now())
+  createdById  String
+  resolvedAt   DateTime?
+  resolvedById String?
+
+  caravan    Caravan @relation(fields: [caravanId], references: [id], onDelete: Cascade)
+  createdBy  User    @relation("IssueCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  resolvedBy User?   @relation("IssueResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([caravanId, resolvedAt])
 }
 
 // Période durant laquelle la caravane est indisponible (toutes ses lits sont

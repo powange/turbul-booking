@@ -7,6 +7,9 @@ const navItems = computed(() => {
     { label: 'Réservations', to: '/bookings', icon: 'i-lucide-calendar-days' },
     { label: 'Hôtes', to: '/guests', icon: 'i-lucide-users-round' }
   ]
+  if (role.value === 'MANAGER' || role.value === 'ADMIN') {
+    items.push({ label: 'Maintenance', to: '/maintenance', icon: 'i-lucide-wrench' })
+  }
   if (role.value === 'ADMIN') {
     items.push({ label: 'Utilisateurs', to: '/admin/users', icon: 'i-lucide-shield-user' })
     items.push({ label: 'Audit', to: '/admin/audit', icon: 'i-lucide-history' })

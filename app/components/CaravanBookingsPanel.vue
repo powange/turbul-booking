@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import type { Bed, Booking, Caravan, CaravanUnavailability } from '~~/shared/types'
+import type { Bed, Booking, Caravan, CaravanIssue, CaravanUnavailability } from '~~/shared/types'
 import { addDaysIso, formatFullDate, todayIso } from '~/utils/dates'
 
 const props = defineProps<{
   caravan: Caravan
   bookings: Booking[]
   unavailabilities: CaravanUnavailability[]
+  issues: CaravanIssue[]
   canManage: boolean
 }>()
 
@@ -17,6 +18,11 @@ const emit = defineEmits<{
 const toast = useToast()
 const { applyBedUpdate } = useCaravans()
 const { applyCreated: applyUnavailabilityCreated, applyDeleted: applyUnavailabilityDeleted } = useUnavailabilities()
+const {
+  applyCreated: applyIssueCreated,
+  applyUpdated: applyIssueUpdated,
+  applyDeleted: applyIssueDeleted
+} = useCaravanIssues()
 
 const bedIds = computed(() => new Set(props.caravan.beds.map(b => b.id)))
 
@@ -178,6 +184,82 @@ const isBlockedNow = computed(() => {
   const today = todayIso()
   return caravanUnavailabilities.value.some(u => u.from <= today && u.to > today)
 })
+
+// ===== État de la caravane (journal de problèmes) =====
+const caravanIssues = computed(() => {
+  // Tri : non-résolus d'abord (createdAt desc), puis résolus (resolvedAt desc)
+  const items = props.issues.filter(i => i.caravanId === props.caravan.id)
+  const open = items.filter(i => !i.resolvedAt).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  const resolved = items.filter(i => i.resolvedAt).sort((a, b) => (b.resolvedAt ?? '').localeCompare(a.resolvedAt ?? ''))
+  return [...open, ...resolved]
+})
+
+const newIssueLabel = ref('')
+const creatingIssue = ref(false)
+
+async function createIssue() {
+  if (!props.canManage) return
+  const label = newIssueLabel.value.trim()
+  if (!label) return
+  creatingIssue.value = true
+  try {
+    const created = await $fetch<CaravanIssue>(`/api/caravans/${props.caravan.id}/issues`, {
+      method: 'POST',
+      body: { label }
+    })
+    applyIssueCreated(created)
+    newIssueLabel.value = ''
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
+  } finally {
+    creatingIssue.value = false
+  }
+}
+
+const togglingIssueIds = ref<string[]>([])
+
+async function toggleIssueResolved(issue: CaravanIssue) {
+  if (!props.canManage) return
+  togglingIssueIds.value = [...togglingIssueIds.value, issue.id]
+  try {
+    const updated = await $fetch<CaravanIssue>(`/api/issues/${issue.id}`, {
+      method: 'PATCH',
+      body: { resolved: !issue.resolvedAt }
+    })
+    applyIssueUpdated(updated)
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
+  } finally {
+    togglingIssueIds.value = togglingIssueIds.value.filter(id => id !== issue.id)
+  }
+}
+
+const removingIssueIds = ref<string[]>([])
+
+async function removeIssue(issue: CaravanIssue) {
+  if (!props.canManage) return
+  if (!confirm(`Supprimer définitivement "${issue.label}" du journal ?`)) return
+  removingIssueIds.value = [...removingIssueIds.value, issue.id]
+  try {
+    await $fetch(`/api/issues/${issue.id}`, { method: 'DELETE' })
+    applyIssueDeleted(issue.id)
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
+  } finally {
+    removingIssueIds.value = removingIssueIds.value.filter(id => id !== issue.id)
+  }
+}
+
+// Tooltip "Créé le … / Résolu le …" — format français abrégé
+const dateTimeFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
+function issueTooltip(issue: CaravanIssue): string {
+  const created = dateTimeFmt.format(new Date(issue.createdAt))
+  if (issue.resolvedAt) {
+    const resolved = dateTimeFmt.format(new Date(issue.resolvedAt))
+    return `Créé le ${created}\nRésolu le ${resolved}`
+  }
+  return `Créé le ${created}`
+}
 </script>
 
 <template>
@@ -401,6 +483,81 @@ const isBlockedNow = computed(() => {
           class="text-xs text-muted italic"
         >
           Aucune indisponibilité.
+        </p>
+      </section>
+
+      <USeparator />
+
+      <!-- État de la caravane (journal de problèmes) -->
+      <section class="space-y-2">
+        <h3 class="text-sm font-semibold flex items-center gap-2">
+          <UIcon
+            name="i-lucide-clipboard-check"
+            class="text-muted"
+          />
+          État de la caravane
+        </h3>
+
+        <form
+          v-if="canManage"
+          class="flex items-center gap-2"
+          @submit.prevent="createIssue"
+        >
+          <UInput
+            v-model="newIssueLabel"
+            placeholder="Décrire un problème…"
+            size="sm"
+            class="flex-1"
+          />
+          <UButton
+            type="submit"
+            icon="i-lucide-plus"
+            size="sm"
+            :loading="creatingIssue"
+            :disabled="!newIssueLabel.trim()"
+          >
+            Ajouter
+          </UButton>
+        </form>
+
+        <ul
+          v-if="caravanIssues.length"
+          class="space-y-1.5"
+        >
+          <li
+            v-for="issue in caravanIssues"
+            :key="issue.id"
+            :title="issueTooltip(issue)"
+            class="flex items-center gap-2 rounded-md border border-default px-3 py-2 text-sm"
+          >
+            <UCheckbox
+              :model-value="!!issue.resolvedAt"
+              :disabled="!canManage || togglingIssueIds.includes(issue.id)"
+              @update:model-value="() => toggleIssueResolved(issue)"
+            />
+            <span
+              class="flex-1 min-w-0 truncate"
+              :class="issue.resolvedAt ? 'line-through text-muted' : ''"
+            >
+              {{ issue.label }}
+            </span>
+            <UButton
+              v-if="canManage"
+              icon="i-lucide-trash-2"
+              color="error"
+              variant="ghost"
+              size="xs"
+              :loading="removingIssueIds.includes(issue.id)"
+              title="Supprimer cet item du journal"
+              @click="removeIssue(issue)"
+            />
+          </li>
+        </ul>
+        <p
+          v-else
+          class="text-xs text-muted italic"
+        >
+          Aucun problème signalé.
         </p>
       </section>
     </div>

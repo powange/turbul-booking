@@ -51,9 +51,9 @@ export default defineNuxtConfig({
           'default-src \'self\'',
           'script-src \'self\' \'unsafe-inline\' \'unsafe-eval\'',
           'style-src \'self\' \'unsafe-inline\'',
-          'img-src \'self\' data: blob: https://*.tile.openstreetmap.org https://server.arcgisonline.com',
+          'img-src \'self\' data: blob: https://*.tile.openstreetmap.org https://server.arcgisonline.com https://api.iconify.design',
           'font-src \'self\' data:',
-          'connect-src \'self\' ws: wss:',
+          'connect-src \'self\' ws: wss: https://api.iconify.design',
           'frame-ancestors \'none\'',
           'base-uri \'self\'',
           'form-action \'self\''

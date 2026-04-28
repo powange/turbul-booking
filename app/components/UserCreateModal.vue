@@ -48,10 +48,10 @@ async function onSubmit() {
     toast.add({ title: 'Utilisateur créé', color: 'success' })
     emit('created')
     emit('update:open', false)
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur',
-      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   } finally {

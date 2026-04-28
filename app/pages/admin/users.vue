@@ -25,10 +25,10 @@ async function deleteUser(u: AdminUser) {
   try {
     await remove(u.id)
     toast.add({ title: 'Utilisateur supprimé', color: 'success' })
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur',
-      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   }

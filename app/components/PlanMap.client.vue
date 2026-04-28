@@ -135,9 +135,15 @@ function syncCaravan(c: Caravan) {
 
 function removeCaravan(id: string) {
   const p = polygons.get(id)
-  if (p) { p.remove(); polygons.delete(id) }
+  if (p) {
+    p.remove()
+    polygons.delete(id)
+  }
   const m = markers.get(id)
-  if (m) { m.remove(); markers.delete(id) }
+  if (m) {
+    m.remove()
+    markers.delete(id)
+  }
 }
 
 function diffSync(list: Caravan[]) {
@@ -432,9 +438,10 @@ function initMap() {
     emit('selectWall', null)
   })
 
-  // Création de zone ou mur via Geoman
-  map.on('pm:create', (e: any) => {
-    const layer = e.layer as L.Polyline
+  // Création de zone ou mur via Geoman. L'événement Geoman n'est pas typé
+  // dans @types/leaflet, on cast minimal sur la forme attendue.
+  map.on('pm:create', (e) => {
+    const layer = (e as { layer: L.Polyline }).layer
     const points = latLngsToPoints(layer)
     layer.remove()
     if (props.zoneDrawMode) {

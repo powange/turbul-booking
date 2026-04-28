@@ -46,10 +46,10 @@ async function downloadExport() {
     a.remove()
     URL.revokeObjectURL(url)
     toast.add({ title: 'Export téléchargé', color: 'success' })
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur d\'export',
-      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   } finally {
@@ -127,10 +127,10 @@ async function performImport() {
     importData.value = null
     importFileName.value = null
     importSelected.value = new Set()
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur d\'import',
-      description: err?.data?.statusMessage ?? err?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   } finally {

@@ -36,8 +36,8 @@ watch(() => form.color, (color) => {
         body: { color }
       })
       emit('saved')
-    } catch (err: any) {
-      toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+    } catch (err) {
+      toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
     } finally {
       savingColor.value = false
     }
@@ -57,8 +57,8 @@ watch(() => form.thickness, (thickness) => {
         body: { thickness }
       })
       emit('saved')
-    } catch (err: any) {
-      toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+    } catch (err) {
+      toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
     } finally {
       savingThickness.value = false
     }
@@ -73,8 +73,8 @@ async function remove() {
     await $fetch(`/api/walls/${props.wall.id}`, { method: 'DELETE' })
     toast.add({ title: 'Mur supprimé', color: 'success' })
     emit('close')
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   } finally {
     deleting.value = false
   }

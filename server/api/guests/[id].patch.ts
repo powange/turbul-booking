@@ -21,8 +21,8 @@ export default defineEventHandler(async (event) => {
   const data: Record<string, unknown> = {}
   if (body.firstName !== undefined) data.firstName = body.firstName.trim()
   if (body.lastName !== undefined) data.lastName = body.lastName.trim()
-  if (body.email !== undefined) data.email = (body.email || null) && body.email!.trim() || null
-  if (body.phone !== undefined) data.phone = (body.phone || null) && body.phone!.trim() || null
+  if (body.email !== undefined) data.email = body.email ? body.email.trim() : null
+  if (body.phone !== undefined) data.phone = body.phone ? body.phone.trim() : null
 
   const guest = await prisma.guest.update({ where: { id }, data })
 

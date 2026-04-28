@@ -3,11 +3,11 @@
 // que le contrôle de rôle. À utiliser via definePageMeta({ middleware: ['admin'] }).
 import { authClient } from '~/lib/authClient'
 
-export default defineNuxtRouteMiddleware(async (to) => {
+export default defineNuxtRouteMiddleware(async () => {
   const headers = import.meta.server ? useRequestHeaders(['cookie']) : undefined
   const { data } = await authClient.getSession({ fetchOptions: { headers } })
 
-  const role = (data?.user as any)?.role
+  const role = (data?.user as { role?: string } | undefined)?.role
   if (role !== 'ADMIN') {
     throw createError({ statusCode: 403, statusMessage: 'Accès réservé aux administrateurs.' })
   }

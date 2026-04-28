@@ -192,8 +192,8 @@ function openBookingFromCaravan() {
 async function moveCaravan(id: string, lat: number, lng: number) {
   try {
     await $fetch(`/api/caravans/${id}`, { method: 'PATCH', body: { lat, lng } })
-  } catch (err: any) {
-    toast.add({ title: 'Erreur lors du déplacement', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur lors du déplacement', description: errorMessage(err), color: 'error' })
   }
 }
 
@@ -220,8 +220,8 @@ async function placeCaravanAt(lat: number, lng: number) {
     placeMode.value = false
     newCaravanName.value = ''
     toast.add({ title: 'Caravane créée', color: 'success' })
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   } finally {
     creating.value = false
   }
@@ -240,16 +240,16 @@ async function createZone(points: Array<[number, number]>) {
     zoneDrawMode.value = false
     selectedZoneId.value = created.id
     toast.add({ title: 'Zone créée', description: 'Renomme-la dans le panneau.', color: 'success' })
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   }
 }
 
 async function updateZonePoints(id: string, points: Array<[number, number]>) {
   try {
     await $fetch(`/api/zones/${id}`, { method: 'PATCH', body: { points } })
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   }
 }
 
@@ -266,16 +266,16 @@ async function createWall(points: Array<[number, number]>) {
     wallDrawMode.value = false
     selectedWallId.value = created.id
     toast.add({ title: 'Mur créé', color: 'success' })
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   }
 }
 
 async function updateWallPoints(id: string, points: Array<[number, number]>) {
   try {
     await $fetch(`/api/walls/${id}`, { method: 'PATCH', body: { points } })
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   }
 }
 </script>

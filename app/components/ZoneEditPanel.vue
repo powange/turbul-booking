@@ -40,8 +40,8 @@ async function saveName() {
     })
     toast.add({ title: 'Nom enregistré', color: 'success' })
     emit('saved')
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   } finally {
     savingName.value = false
   }
@@ -60,8 +60,8 @@ watch(() => form.color, (color) => {
         body: { color }
       })
       emit('saved')
-    } catch (err: any) {
-      toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+    } catch (err) {
+      toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
     } finally {
       savingColor.value = false
     }
@@ -78,8 +78,8 @@ watch(() => form.filled, async (filled) => {
       body: { filled }
     })
     emit('saved')
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
     form.filled = props.zone.filled
   } finally {
     savingFilled.value = false
@@ -94,8 +94,8 @@ async function remove() {
     await $fetch(`/api/zones/${props.zone.id}`, { method: 'DELETE' })
     toast.add({ title: 'Zone supprimée', color: 'success' })
     emit('close')
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   } finally {
     deleting.value = false
   }

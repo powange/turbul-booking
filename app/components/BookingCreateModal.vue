@@ -17,7 +17,7 @@ const emit = defineEmits<{
 }>()
 
 const toast = useToast()
-const { search, create: createGuest } = useGuests()
+const { search } = useGuests()
 
 type Mode = 'existing' | 'new'
 
@@ -151,13 +151,20 @@ async function onSubmit() {
 
   submitting.value = true
   try {
-    const body: any = {
+    type NewGuest = { firstName: string, lastName: string, email?: string, phone?: string }
+    const body: {
+      bedId: string
+      from: string
+      to: string
+      guestId?: string
+      guest?: NewGuest
+    } = {
       bedId: state.bedId,
       from: state.from,
       to: state.to
     }
     if (state.mode === 'existing') {
-      body.guestId = state.guestId
+      body.guestId = state.guestId ?? undefined
     } else {
       body.guest = {
         firstName: state.guest.firstName.trim(),
@@ -170,10 +177,10 @@ async function onSubmit() {
     toast.add({ title: 'Réservation enregistrée', color: 'success' })
     emit('created')
     emit('update:open', false)
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur',
-      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   } finally {

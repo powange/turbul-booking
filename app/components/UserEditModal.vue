@@ -54,10 +54,10 @@ async function saveProfile() {
     toast.add({ title: 'Utilisateur mis à jour', color: 'success' })
     emit('updated')
     emit('update:open', false)
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur',
-      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   } finally {
@@ -79,10 +79,10 @@ async function savePassword() {
     await resetPassword(props.user.id, newPassword.value)
     toast.add({ title: 'Mot de passe réinitialisé', color: 'success' })
     newPassword.value = ''
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur',
-      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   } finally {

@@ -23,9 +23,9 @@ interface RealtimeCollectionOptions<T extends { id: string }> {
    */
   rangeOverlap?: (item: T, range: { from: string, to: string }) => boolean
   /** Transforme la réponse du fetch (ex: normalise les dates ISO). */
-  mapFetched?: (raw: any) => T
+  mapFetched?: (raw: unknown) => T
   /** Transforme le payload d'un événement WS (idem). */
-  mapEvent?: (raw: any) => T
+  mapEvent?: (raw: unknown) => T
 }
 
 export interface RealtimeCollectionApi<T extends { id: string }> {
@@ -83,16 +83,16 @@ export function createRealtimeCollection<T extends { id: string }>(
     items.value = items.value.filter(x => x.id !== id)
   }
 
-  function applyEvent(event: string, payload: any) {
-    const mapped = opts.mapEvent ? opts.mapEvent(payload) : payload
+  function applyEvent(event: string, payload: unknown) {
+    const mapped = (opts.mapEvent ? opts.mapEvent(payload) : payload) as T
     if (event === opts.events.created) {
-      applyCreated(mapped as T)
+      applyCreated(mapped)
     } else if (event === opts.events.updated) {
-      applyUpdated(mapped as T)
+      applyUpdated(mapped)
     } else if (event === opts.events.deleted) {
       // Le payload de delete contient au minimum { id }, parfois avec
       // des champs additionnels (ex: caravanId pour bed:deleted).
-      const id = (payload as { id: string }).id
+      const id = (payload as { id?: string }).id
       if (id) applyDeleted(id)
     }
   }
@@ -102,11 +102,11 @@ export function createRealtimeCollection<T extends { id: string }>(
     loading.value = true
     try {
       const headers = import.meta.server ? useRequestHeaders(['cookie']) : undefined
-      const data = await $fetch<any[]>(opts.fetchUrl, {
+      const data = await $fetch<unknown[]>(opts.fetchUrl, {
         query,
         headers
       })
-      items.value = opts.mapFetched ? data.map(opts.mapFetched) : data
+      items.value = opts.mapFetched ? data.map(opts.mapFetched) : (data as T[])
       isReady.value = true
     } finally {
       loading.value = false

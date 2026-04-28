@@ -57,11 +57,15 @@ watch(
 
 // Active l'auto-save après le premier tick (évite le watcher initial / les
 // re-init du form lors d'un changement de caravane sélectionnée).
-nextTick(() => { initializing = false })
+nextTick(() => {
+  initializing = false
+})
 
 watch(() => props.caravan.id, () => {
   initializing = true
-  nextTick(() => { initializing = false })
+  nextTick(() => {
+    initializing = false
+  })
 })
 
 function canEditNow() {
@@ -81,10 +85,10 @@ async function saveDimensions() {
     })
     dimsDirty.value = false
     emit('saved')
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur enregistrement',
-      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   }
@@ -103,10 +107,10 @@ async function saveName() {
     })
     toast.add({ title: 'Nom enregistré', color: 'success' })
     emit('saved')
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur',
-      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   } finally {
@@ -122,8 +126,8 @@ async function remove() {
     await $fetch(`/api/caravans/${props.caravan.id}`, { method: 'DELETE' })
     toast.add({ title: 'Caravane supprimée', color: 'success' })
     emit('close')
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   } finally {
     deleting.value = false
   }
@@ -143,8 +147,8 @@ async function addBed() {
     newBed.label = ''
     newBed.capacity = 1
     toast.add({ title: 'Lit ajouté', color: 'success' })
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   } finally {
     addingBed.value = false
   }
@@ -153,8 +157,8 @@ async function addBed() {
 async function updateBed(id: string, data: { label?: string, capacity?: number }) {
   try {
     await $fetch(`/api/beds/${id}`, { method: 'PATCH', body: data })
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   }
 }
 
@@ -163,8 +167,8 @@ async function removeBed(id: string, label: string) {
   try {
     await $fetch(`/api/beds/${id}`, { method: 'DELETE' })
     toast.add({ title: 'Lit supprimé', color: 'success' })
-  } catch (err: any) {
-    toast.add({ title: 'Erreur', description: err?.statusMessage ?? String(err), color: 'error' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   }
 }
 

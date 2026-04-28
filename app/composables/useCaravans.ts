@@ -4,22 +4,25 @@ const caravans = ref<Caravan[]>([])
 const isReady = ref(false)
 let realtimeBound = false
 
-function applyEvent(event: string, payload: any) {
+function applyEvent(event: string, payload: unknown) {
   switch (event) {
     case 'caravan:created': {
-      if (!caravans.value.find(c => c.id === payload.id)) {
-        caravans.value = [...caravans.value, payload]
+      const c = payload as Caravan
+      if (!caravans.value.find(x => x.id === c.id)) {
+        caravans.value = [...caravans.value, c]
       }
       break
     }
     case 'caravan:updated': {
+      const upd = payload as Caravan
       caravans.value = caravans.value.map(c =>
-        c.id === payload.id ? { ...c, ...payload, beds: payload.beds ?? c.beds } : c
+        c.id === upd.id ? { ...c, ...upd, beds: upd.beds ?? c.beds } : c
       )
       break
     }
     case 'caravan:deleted': {
-      caravans.value = caravans.value.filter(c => c.id !== payload.id)
+      const { id } = payload as { id: string }
+      caravans.value = caravans.value.filter(c => c.id !== id)
       break
     }
     case 'bed:created': {

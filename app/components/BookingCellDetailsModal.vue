@@ -28,10 +28,10 @@ async function cancel(b: Booking) {
   try {
     await $fetch(`/api/bookings/${b.id}`, { method: 'DELETE' })
     toast.add({ title: 'Réservation annulée', color: 'success' })
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur',
-      description: err?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   }

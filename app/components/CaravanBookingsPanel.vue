@@ -39,8 +39,12 @@ const totalUpcoming = computed(() =>
 // Switch "Raccordée à l'électricité" — éditable MANAGER+ via PATCH dédié
 // (le serveur autorise MANAGER quand seul ce champ est dans le body).
 const electricity = ref(props.caravan.hasElectricity)
-watch(() => props.caravan.id, () => { electricity.value = props.caravan.hasElectricity })
-watch(() => props.caravan.hasElectricity, (v) => { electricity.value = v })
+watch(() => props.caravan.id, () => {
+  electricity.value = props.caravan.hasElectricity
+})
+watch(() => props.caravan.hasElectricity, (v) => {
+  electricity.value = v
+})
 
 const savingElectricity = ref(false)
 let electricityTimer: ReturnType<typeof setTimeout> | null = null
@@ -56,11 +60,11 @@ watch(electricity, (v) => {
         method: 'PATCH',
         body: { hasElectricity: v }
       })
-    } catch (err: any) {
+    } catch (err) {
       electricity.value = props.caravan.hasElectricity
       toast.add({
         title: 'Erreur',
-        description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+        description: errorMessage(err),
         color: 'error'
       })
     } finally {
@@ -84,10 +88,10 @@ async function toggleLinen(bedId: string, current: boolean) {
     // Mise à jour locale immédiate ; le broadcast WS qui suit fera juste
     // un no-op (state déjà à jour).
     applyBedUpdate(updated)
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur',
-      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   } finally {
@@ -137,10 +141,10 @@ async function createUnavailability() {
     applyUnavailabilityCreated(created)
     showUnavForm.value = false
     toast.add({ title: 'Indisponibilité enregistrée', color: 'success' })
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur',
-      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   } finally {
@@ -158,10 +162,10 @@ async function removeUnavailability(u: CaravanUnavailability) {
     await $fetch(`/api/unavailabilities/${u.id}`, { method: 'DELETE' })
     applyUnavailabilityDeleted(u.id, u.caravanId)
     toast.add({ title: 'Indisponibilité levée', color: 'success' })
-  } catch (err: any) {
+  } catch (err) {
     toast.add({
       title: 'Erreur',
-      description: err?.statusMessage ?? err?.data?.statusMessage ?? String(err),
+      description: errorMessage(err),
       color: 'error'
     })
   } finally {

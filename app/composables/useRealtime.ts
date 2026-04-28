@@ -1,12 +1,12 @@
 import type { RealtimeEvent, RealtimeMessage } from '~~/shared/types'
 
-type Handler = (event: RealtimeEvent, payload: any) => void
+type Handler = (event: RealtimeEvent, payload: unknown) => void
 
 const subscribers = new Set<Handler>()
 let ws: WebSocket | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
-function dispatch(event: RealtimeEvent, payload: any) {
+function dispatch(event: RealtimeEvent, payload: unknown) {
   for (const sub of subscribers) {
     try {
       sub(event, payload)

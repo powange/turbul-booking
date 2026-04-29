@@ -53,7 +53,9 @@ function scheduleSave() {
       rotation: r,
       orientation: o
     })
-    setTimeout(() => { saving.value = false }, 600)
+    setTimeout(() => {
+      saving.value = false
+    }, 600)
   }, 350)
 }
 
@@ -101,7 +103,10 @@ function remove() {
         Si non défini, l'export auto-cadre sur l'ensemble des éléments.
       </p>
 
-      <div v-if="!frame" class="space-y-3">
+      <div
+        v-if="!frame"
+        class="space-y-3"
+      >
         <p class="text-sm">
           Aucun cadre n'est défini.
         </p>
@@ -133,7 +138,10 @@ function remove() {
         </UButton>
       </div>
 
-      <div v-else class="space-y-3">
+      <div
+        v-else
+        class="space-y-3"
+      >
         <UFormField label="Orientation">
           <URadioGroup
             v-model="orientationInput"
@@ -168,8 +176,14 @@ function remove() {
 
         <p class="text-xs text-muted">
           Petit côté : {{ shortMeters }} m
-          <span v-if="saving" class="ml-2">
-            <UIcon name="i-lucide-loader-circle" class="animate-spin inline align-text-bottom" />
+          <span
+            v-if="saving"
+            class="ml-2"
+          >
+            <UIcon
+              name="i-lucide-loader-circle"
+              class="animate-spin inline align-text-bottom"
+            />
             Enregistrement…
           </span>
         </p>
@@ -182,7 +196,10 @@ function remove() {
       </div>
     </div>
 
-    <div v-if="frame" class="px-4 py-3 border-t border-default">
+    <div
+      v-if="frame"
+      class="px-4 py-3 border-t border-default"
+    >
       <UButton
         block
         color="error"

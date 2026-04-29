@@ -32,6 +32,9 @@ const { walls, isReady: wallsReady, refresh: refreshWalls, ensureRealtime: ensur
 const { bookings, fetchRange: fetchBookingsRange, ensureRealtime: ensureBookingsRealtime } = useBookings()
 const { unavailabilities, fetchRange: fetchUnavailabilitiesRange, ensureRealtime: ensureUnavailabilitiesRealtime } = useUnavailabilities()
 const { issues, refresh: refreshIssues, ensureRealtime: ensureIssuesRealtime } = useCaravanIssues()
+const { frame: printFrame, refresh: refreshPrintFrame, ensureRealtime: ensurePrintFrameRealtime, applyUpdate: applyPrintFrameUpdate, applyDelete: applyPrintFrameDelete } = usePrintFrame()
+const { landmarks, refresh: refreshLandmarks, ensureRealtime: ensureLandmarksRealtime } = useLandmarks()
+const { icons: landmarkIcons, refresh: refreshLandmarkIcons, ensureRealtime: ensureLandmarkIconsRealtime, applyCreated: applyLandmarkIconCreated, applyDeleted: applyLandmarkIconDeleted } = useLandmarkIcons()
 
 // Deep-link via `?caravan=ID` (depuis la page Maintenance) : la query
 // param hydrate selectedId, qui ouvre le panneau de la caravane correspondante
@@ -51,12 +54,16 @@ const wallDrawMode = ref(false)
 const draftWallColor = ref('#1f2937')
 const draftWallThickness = ref(3)
 
+const selectedLandmarkId = ref<string | null>(null)
+const landmarkPlaceMode = ref(false)
+
 const bookingModalOpen = ref(false)
 const bookingModalCaravan = ref<Caravan | null>(null)
 
 const selectedCaravan = computed(() => caravans.value.find(c => c.id === selectedId.value) ?? null)
 const selectedZone = computed(() => zones.value.find(z => z.id === selectedZoneId.value) ?? null)
 const selectedWall = computed(() => walls.value.find(w => w.id === selectedWallId.value) ?? null)
+const selectedLandmark = computed(() => landmarks.value.find(l => l.id === selectedLandmarkId.value) ?? null)
 
 // Snapshot pour pouvoir restaurer si l'utilisateur ferme le panneau sans
 // avoir cliqué sur "Enregistrer" (l'aperçu live a modifié l'objet en place).
@@ -72,9 +79,11 @@ watch(selectedId, async (newId, oldId) => {
   if (newId) {
     selectedZoneId.value = null
     selectedWallId.value = null
+    selectedLandmarkId.value = null
     zoneDrawMode.value = false
     wallDrawMode.value = false
     placeMode.value = false
+    landmarkPlaceMode.value = false
     const c = caravans.value.find(c => c.id === newId)
     previewSnapshot = c
       ? { rotation: c.rotation, width: c.width, length: c.length, hasElectricity: c.hasElectricity }
@@ -88,9 +97,11 @@ watch(selectedZoneId, (id) => {
   if (id) {
     selectedId.value = null
     selectedWallId.value = null
+    selectedLandmarkId.value = null
     zoneDrawMode.value = false
     wallDrawMode.value = false
     placeMode.value = false
+    landmarkPlaceMode.value = false
   }
 })
 
@@ -98,9 +109,23 @@ watch(selectedWallId, (id) => {
   if (id) {
     selectedId.value = null
     selectedZoneId.value = null
+    selectedLandmarkId.value = null
     zoneDrawMode.value = false
     wallDrawMode.value = false
     placeMode.value = false
+    landmarkPlaceMode.value = false
+  }
+})
+
+watch(selectedLandmarkId, (id) => {
+  if (id) {
+    selectedId.value = null
+    selectedZoneId.value = null
+    selectedWallId.value = null
+    zoneDrawMode.value = false
+    wallDrawMode.value = false
+    placeMode.value = false
+    landmarkPlaceMode.value = false
   }
 })
 
@@ -109,8 +134,10 @@ watch(zoneDrawMode, (mode) => {
     selectedId.value = null
     selectedZoneId.value = null
     selectedWallId.value = null
+    selectedLandmarkId.value = null
     wallDrawMode.value = false
     placeMode.value = false
+    landmarkPlaceMode.value = false
   }
 })
 
@@ -119,8 +146,10 @@ watch(wallDrawMode, (mode) => {
     selectedId.value = null
     selectedZoneId.value = null
     selectedWallId.value = null
+    selectedLandmarkId.value = null
     zoneDrawMode.value = false
     placeMode.value = false
+    landmarkPlaceMode.value = false
   }
 })
 
@@ -129,8 +158,22 @@ watch(placeMode, (mode) => {
     selectedId.value = null
     selectedZoneId.value = null
     selectedWallId.value = null
+    selectedLandmarkId.value = null
     zoneDrawMode.value = false
     wallDrawMode.value = false
+    landmarkPlaceMode.value = false
+  }
+})
+
+watch(landmarkPlaceMode, (mode) => {
+  if (mode) {
+    selectedId.value = null
+    selectedZoneId.value = null
+    selectedWallId.value = null
+    selectedLandmarkId.value = null
+    zoneDrawMode.value = false
+    wallDrawMode.value = false
+    placeMode.value = false
   }
 })
 
@@ -161,8 +204,10 @@ watch(editMode, (active) => {
   placeMode.value = false
   zoneDrawMode.value = false
   wallDrawMode.value = false
+  landmarkPlaceMode.value = false
   selectedZoneId.value = null
   selectedWallId.value = null
+  selectedLandmarkId.value = null
   newCaravanName.value = ''
 })
 
@@ -174,7 +219,10 @@ await Promise.allSettled([
   refreshWalls(),
   fetchBookingsRange(todayIso(), addDaysIso(todayIso(), 90)),
   fetchUnavailabilitiesRange(todayIso(), addDaysIso(todayIso(), 90)),
-  refreshIssues()
+  refreshIssues(),
+  refreshPrintFrame(),
+  refreshLandmarks(),
+  refreshLandmarkIcons()
 ]).then((results) => {
   for (const r of results) {
     if (r.status === 'rejected') console.error('[index] initial refresh failed', r.reason)
@@ -188,6 +236,9 @@ onMounted(() => {
   ensureBookingsRealtime()
   ensureUnavailabilitiesRealtime()
   ensureIssuesRealtime()
+  ensurePrintFrameRealtime()
+  ensureLandmarksRealtime()
+  ensureLandmarkIconsRealtime()
 })
 
 function openBookingFromCaravan() {
@@ -198,6 +249,11 @@ function openBookingFromCaravan() {
 
 function printPlan() {
   if (import.meta.client) window.print()
+}
+
+const planMapRef = ref<{ recenter: () => void } | null>(null)
+function recenterMap() {
+  planMapRef.value?.recenter()
 }
 
 async function moveCaravan(id: string, lat: number, lng: number) {
@@ -289,50 +345,249 @@ async function updateWallPoints(id: string, points: Array<[number, number]>) {
     toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
   }
 }
+
+// === Points de repère ===
+
+// Bootstrap : si la bibliothèque est vide, on ne peut pas placer de repère
+// (FK iconId NOT NULL). On ouvre alors un modal d'upload pour créer la 1re
+// icône, puis on enchaîne sur le mode placement.
+const landmarkBootstrapOpen = ref(false)
+const landmarkBootstrapFile = ref<File | null>(null)
+const landmarkBootstrapName = ref('')
+const landmarkBootstrapUploading = ref(false)
+const landmarkBootstrapInput = ref<HTMLInputElement | null>(null)
+
+function onLandmarkButtonClick() {
+  if (landmarkIcons.value.length === 0) {
+    landmarkBootstrapOpen.value = true
+    return
+  }
+  landmarkPlaceMode.value = true
+}
+
+function onLandmarkBootstrapFile(e: Event) {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  if (file.size > 256 * 1024) {
+    toast.add({ title: 'Fichier trop volumineux', description: 'Max 256 KB.', color: 'error' })
+    target.value = ''
+    return
+  }
+  landmarkBootstrapFile.value = file
+  if (!landmarkBootstrapName.value.trim()) {
+    landmarkBootstrapName.value = file.name.replace(/\.[^.]+$/, '').slice(0, 80)
+  }
+}
+
+async function uploadFirstLandmarkIcon() {
+  if (!landmarkBootstrapFile.value || !landmarkBootstrapName.value.trim()) return
+  landmarkBootstrapUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', landmarkBootstrapFile.value)
+    fd.append('name', landmarkBootstrapName.value.trim())
+    await $fetch('/api/landmark-icons', { method: 'POST', body: fd })
+    landmarkBootstrapOpen.value = false
+    landmarkBootstrapFile.value = null
+    landmarkBootstrapName.value = ''
+    if (landmarkBootstrapInput.value) landmarkBootstrapInput.value.value = ''
+    landmarkPlaceMode.value = true
+    toast.add({ title: 'Icône ajoutée', description: 'Cliquez sur le plan pour placer le repère.', color: 'success' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
+  } finally {
+    landmarkBootstrapUploading.value = false
+  }
+}
+
+async function placeLandmarkAt(lat: number, lng: number) {
+  // Le mode placement n'est activable que si la bibliothèque a au moins
+  // une icône (cf. bouton désactivé dans la barre admin), donc on prend
+  // la première icône comme défaut. L'utilisateur la changera dans le panneau.
+  const defaultIcon = landmarkIcons.value[0]
+  if (!defaultIcon) {
+    toast.add({ title: 'Téléversez d\'abord une icône', color: 'warning' })
+    landmarkPlaceMode.value = false
+    return
+  }
+  try {
+    const created = await $fetch<{ id: string }>('/api/landmarks', {
+      method: 'POST',
+      body: {
+        name: 'Nouveau repère',
+        lat,
+        lng,
+        iconId: defaultIcon.id,
+        sizePx: 32,
+        color: defaultIcon.format === 'svg' ? '#1f2937' : null
+      }
+    })
+    landmarkPlaceMode.value = false
+    selectedLandmarkId.value = created.id
+    toast.add({ title: 'Repère créé', description: 'Renomme-le dans le panneau.', color: 'success' })
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
+  }
+}
+
+async function moveLandmark(id: string, lat: number, lng: number) {
+  try {
+    await $fetch(`/api/landmarks/${id}`, { method: 'PATCH', body: { lat, lng } })
+  } catch (err) {
+    toast.add({ title: 'Erreur lors du déplacement', description: errorMessage(err), color: 'error' })
+  }
+}
+
+// Aperçu live depuis le panneau d'édition : on mute la landmark
+// sélectionnée en place. Le watcher deep dans usePlanLandmarks détecte la
+// mutation et redessine le marker, sans attendre le PATCH/realtime.
+function onLandmarkPreview(patch: { sizePx?: number, color?: string | null, iconId?: string }) {
+  const lm = selectedLandmark.value
+  if (!lm) return
+  if (patch.sizePx !== undefined) lm.sizePx = patch.sizePx
+  if (patch.color !== undefined) lm.color = patch.color
+  if (patch.iconId !== undefined) lm.iconId = patch.iconId
+}
+
+// === Cadre PDF ===
+const printFramePanelOpen = ref(false)
+// Centre de la vue actuelle, mis à jour quand on ouvre le panneau pour
+// "Créer au centre de la vue".
+const mapCenter = ref<{ lat: number, lng: number } | null>(null)
+
+function openPrintFramePanel() {
+  // Approximation : on prend le centre par défaut de l'app si on ne peut pas
+  // lire la vue Leaflet d'ici. PrintFrameEditPanel l'utilise uniquement pour
+  // la création initiale du cadre.
+  mapCenter.value = {
+    lat: caravans.value[0]?.lat ?? Number(useRuntimeConfig().public.mapDefaultLat),
+    lng: caravans.value[0]?.lng ?? Number(useRuntimeConfig().public.mapDefaultLng)
+  }
+  printFramePanelOpen.value = true
+}
+
+async function savePrintFrame(data: { lat: number, lng: number, widthMeters: number, rotation: number, orientation: 'landscape' | 'portrait' }) {
+  try {
+    const updated = await $fetch('/api/print-frame', { method: 'PUT', body: data })
+    applyPrintFrameUpdate(updated)
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
+  }
+}
+
+async function deletePrintFrame() {
+  try {
+    await $fetch('/api/print-frame', { method: 'DELETE' })
+    applyPrintFrameDelete()
+    printFramePanelOpen.value = false
+  } catch (err) {
+    toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })
+  }
+}
+
+// Drags depuis la map → on persiste le delta concerné, en gardant les
+// autres paramètres inchangés.
+async function onPrintFrameMove(lat: number, lng: number) {
+  if (!printFrame.value) return
+  await savePrintFrame({
+    lat,
+    lng,
+    widthMeters: printFrame.value.widthMeters,
+    rotation: printFrame.value.rotation,
+    orientation: printFrame.value.orientation
+  })
+}
+async function onPrintFrameResize(widthMeters: number) {
+  if (!printFrame.value) return
+  await savePrintFrame({
+    lat: printFrame.value.lat,
+    lng: printFrame.value.lng,
+    widthMeters,
+    rotation: printFrame.value.rotation,
+    orientation: printFrame.value.orientation
+  })
+}
+async function onPrintFrameRotate(rotationDeg: number) {
+  if (!printFrame.value) return
+  await savePrintFrame({
+    lat: printFrame.value.lat,
+    lng: printFrame.value.lng,
+    widthMeters: printFrame.value.widthMeters,
+    rotation: rotationDeg,
+    orientation: printFrame.value.orientation
+  })
+}
 </script>
 
 <template>
-  <div class="relative h-[calc(100dvh-4rem)] w-full plan-map-print-root">
-    <UButton
-      variant="outline"
-      size="sm"
-      icon="i-lucide-printer"
-      class="absolute top-3 left-3 z-1000 print:hidden bg-default/90 backdrop-blur"
-      @click="printPlan"
-    >
-      Imprimer / PDF
-    </UButton>
+  <div
+    class="relative h-[calc(100dvh-4rem)] w-full plan-map-print-root"
+    :class="`print-orientation-${printFrame?.orientation ?? 'landscape'}`"
+  >
+    <div class="absolute top-3 left-3 z-1000 print:hidden flex items-center gap-2">
+      <UButton
+        variant="outline"
+        size="sm"
+        icon="i-lucide-printer"
+        class="bg-default/90 backdrop-blur"
+        @click="printPlan"
+      >
+        Imprimer / PDF
+      </UButton>
+      <UButton
+        variant="outline"
+        size="sm"
+        icon="i-lucide-locate-fixed"
+        class="bg-default/90 backdrop-blur"
+        title="Recentrer la map"
+        @click="recenterMap"
+      />
+    </div>
     <PlanMap
+      ref="planMapRef"
       :caravans="caravans"
       :zones="zones"
       :walls="walls"
+      :landmarks="landmarks"
+      :landmark-icons="landmarkIcons"
       :bookings="bookings"
+      :print-frame="printFrame"
+      :print-frame-visible="canEdit"
       :selected-id="selectedId"
       :selected-zone-id="selectedZoneId"
       :selected-wall-id="selectedWallId"
+      :selected-landmark-id="selectedLandmarkId"
       :can-edit="canEdit"
       :place-mode="placeMode"
       :zone-draw-mode="zoneDrawMode"
       :wall-draw-mode="wallDrawMode"
+      :landmark-place-mode="landmarkPlaceMode"
       :draft-zone-color="draftZoneColor"
       :draft-wall-color="draftWallColor"
       :draft-wall-thickness="draftWallThickness"
       @select="selectedId = $event"
       @select-zone="selectedZoneId = $event"
       @select-wall="selectedWallId = $event"
+      @select-landmark="selectedLandmarkId = $event"
       @move="moveCaravan"
       @place-at="placeCaravanAt"
+      @place-landmark-at="placeLandmarkAt"
+      @landmark-moved="moveLandmark"
       @zone-created="createZone"
       @zone-edited="updateZonePoints"
       @wall-created="createWall"
       @wall-edited="updateWallPoints"
+      @print-frame-move="onPrintFrameMove"
+      @print-frame-resize="onPrintFrameResize"
+      @print-frame-rotate="onPrintFrameRotate"
     />
 
     <!-- Barre admin : switch mode édition (toujours visible pour ADMIN) puis
          actions de création quand le mode édition est activé. -->
     <div
       v-if="isAdmin"
-      class="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-default/90 backdrop-blur rounded-full shadow-md px-4 py-2 border border-default"
+      class="absolute top-3 left-1/2 -translate-x-1/2 z-1000 flex items-center gap-3 bg-default/90 backdrop-blur rounded-full shadow-md px-4 py-2 border border-default print:hidden"
     >
       <USwitch
         v-model="editMode"
@@ -407,6 +662,18 @@ async function updateWallPoints(id: string, points: Array<[number, number]>) {
             Annuler
           </UButton>
         </template>
+        <template v-else-if="landmarkPlaceMode">
+          <span class="text-xs text-muted hidden sm:inline">cliquez sur le plan pour placer un repère</span>
+          <UButton
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            @click="landmarkPlaceMode = false"
+          >
+            Annuler
+          </UButton>
+        </template>
         <template v-else>
           <UButton
             icon="i-lucide-plus"
@@ -433,17 +700,35 @@ async function updateWallPoints(id: string, points: Array<[number, number]>) {
           >
             Mur
           </UButton>
+          <UButton
+            icon="i-lucide-map-pin"
+            color="neutral"
+            variant="soft"
+            size="sm"
+            @click="onLandmarkButtonClick"
+          >
+            Repère
+          </UButton>
+          <UButton
+            icon="i-lucide-square-dashed"
+            color="neutral"
+            variant="soft"
+            size="sm"
+            @click="openPrintFramePanel"
+          >
+            Cadre PDF
+          </UButton>
         </template>
       </template>
     </div>
 
     <!-- Indicateur "aucun élément" -->
     <div
-      v-if="isReady && zonesReady && wallsReady && caravans.length === 0 && zones.length === 0 && walls.length === 0"
-      class="absolute top-20 left-1/2 -translate-x-1/2 z-[999] bg-default/90 backdrop-blur rounded-md shadow px-4 py-2 border border-default text-sm text-muted"
+      v-if="isReady && zonesReady && wallsReady && caravans.length === 0 && zones.length === 0 && walls.length === 0 && landmarks.length === 0"
+      class="absolute top-20 left-1/2 -translate-x-1/2 z-999 bg-default/90 backdrop-blur rounded-md shadow px-4 py-2 border border-default text-sm text-muted print:hidden"
     >
       Aucun élément sur le plan pour le moment.
-      <span v-if="canEdit">Cliquez sur "Caravane", "Zone" ou "Mur" pour commencer.</span>
+      <span v-if="canEdit">Cliquez sur "Caravane", "Zone", "Mur" ou "Repère" pour commencer.</span>
       <span v-else-if="isAdmin">Activez le mode édition pour en ajouter.</span>
     </div>
 
@@ -510,6 +795,108 @@ async function updateWallPoints(id: string, points: Array<[number, number]>) {
           :wall="selectedWall"
           :can-edit="canEdit"
           @close="selectedWallId = null"
+        />
+      </template>
+    </USlideover>
+
+    <!-- Panneau d'édition d'un point de repère : non-modal (drag sur la map). -->
+    <USlideover
+      :open="!!selectedLandmark"
+      :modal="false"
+      :dismissible="false"
+      :ui="{ content: 'max-w-md w-full pointer-events-auto' }"
+      @update:open="(v) => { if (!v) selectedLandmarkId = null }"
+    >
+      <template #content>
+        <LandmarkEditPanel
+          v-if="selectedLandmark"
+          :landmark="selectedLandmark"
+          :icons="landmarkIcons"
+          :can-edit="canEdit"
+          @close="selectedLandmarkId = null"
+          @preview="onLandmarkPreview"
+          @icon-uploaded="applyLandmarkIconCreated"
+          @icon-deleted="applyLandmarkIconDeleted"
+        />
+      </template>
+    </USlideover>
+
+    <!-- Bootstrap : upload de la 1re icône quand la bibliothèque est vide. -->
+    <UModal v-model:open="landmarkBootstrapOpen">
+      <template #content>
+        <div class="p-5 space-y-4">
+          <h3 class="font-semibold text-lg flex items-center gap-2">
+            <UIcon name="i-lucide-image-plus" />
+            Première icône de repère
+          </h3>
+          <p class="text-sm text-muted">
+            Pour créer un point de repère, il faut au moins une icône (PNG ou
+            SVG, 256 KB max). Les SVG peuvent être recolorés via la palette.
+          </p>
+          <input
+            ref="landmarkBootstrapInput"
+            type="file"
+            accept=".png,.svg,image/png,image/svg+xml"
+            class="hidden"
+            @change="onLandmarkBootstrapFile"
+          >
+          <div class="flex items-center gap-2">
+            <UButton
+              icon="i-lucide-upload"
+              variant="outline"
+              size="sm"
+              @click="landmarkBootstrapInput?.click()"
+            >
+              Choisir un fichier
+            </UButton>
+            <span
+              v-if="landmarkBootstrapFile"
+              class="text-xs text-muted truncate"
+            >{{ landmarkBootstrapFile.name }}</span>
+          </div>
+          <UInput
+            v-if="landmarkBootstrapFile"
+            v-model="landmarkBootstrapName"
+            placeholder="Nom de l'icône"
+            size="sm"
+          />
+          <div class="flex items-center justify-end gap-2">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              @click="landmarkBootstrapOpen = false"
+            >
+              Annuler
+            </UButton>
+            <UButton
+              icon="i-lucide-check"
+              size="sm"
+              :disabled="!landmarkBootstrapFile || !landmarkBootstrapName.trim()"
+              :loading="landmarkBootstrapUploading"
+              @click="uploadFirstLandmarkIcon"
+            >
+              Ajouter et placer
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Panneau d'édition du cadre PDF (singleton). -->
+    <USlideover
+      v-model:open="printFramePanelOpen"
+      :modal="false"
+      :dismissible="false"
+      :ui="{ content: 'max-w-md w-full pointer-events-auto' }"
+    >
+      <template #content>
+        <PrintFrameEditPanel
+          :frame="printFrame"
+          :map-center="mapCenter"
+          @close="printFramePanelOpen = false"
+          @save="savePrintFrame"
+          @remove="deletePrintFrame"
         />
       </template>
     </USlideover>

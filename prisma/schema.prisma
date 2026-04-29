@@ -35,6 +35,7 @@ model User {
   unavailabilitiesCreated CaravanUnavailability[] @relation("UnavailabilityCreatedBy")
   issuesCreated   CaravanIssue[] @relation("IssueCreatedBy")
   issuesResolved  CaravanIssue[] @relation("IssueResolvedBy")
+  iconsUploaded   LandmarkIcon[] @relation("IconCreatedBy")
   auditLogs       AuditLog[]
 }
 
@@ -204,6 +205,25 @@ model Zone {
   updatedAt DateTime @updatedAt
 }
 
+// Cadre rectangulaire (singleton) qui définit la zone d'export PDF du
+// plan. Les dimensions sont au ratio A4 (297 × 210). `widthMeters`
+// désigne le GRAND côté (= 297mm équivalent), indépendamment de
+// l'orientation : ainsi la valeur reste stable quand on switche
+// landscape ↔ portrait. La hauteur du petit côté est implicite
+// (widthMeters × 210/297).
+// On ne stocke qu'une seule entrée à la fois (enforced par l'UPSERT
+// côté API qui efface les autres).
+model PrintFrame {
+  id           String   @id @default(cuid())
+  lat          Float
+  lng          Float
+  widthMeters  Float    // grand côté en mètres (= 297mm équivalent)
+  rotation     Float    @default(0)  // degrés horaires depuis le nord
+  orientation  String   @default("landscape")  // 'landscape' | 'portrait'
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 // Murs décoratifs sur le plan (polylignes libres). Purement visuel.
 model Wall {
   id        String   @id @default(cuid())
@@ -212,6 +232,47 @@ model Wall {
   points    Json     // [[lat, lng], [lat, lng], ...] — au moins 2 sommets
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Bibliothèque d'icônes (PNG ou SVG) pour les points de repère du plan.
+// Le contenu est stocké en base (Bytea) — taille bornée à 256 KB côté API,
+// donc reste raisonnable. Évite la dépendance à un volume persistant côté
+// runtime. Les SVG sont sanitisés à l'upload pour permettre l'inlining
+// sans risque XSS et la coloration via `currentColor`.
+model LandmarkIcon {
+  id          String   @id @default(cuid())
+  name        String
+  format      String   // 'png' | 'svg'
+  mimeType    String   // 'image/png' | 'image/svg+xml'
+  data        Bytes
+  sizeBytes   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+
+  createdBy User?      @relation("IconCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  landmarks Landmark[]
+
+  @@index([createdAt])
+}
+
+// Point de repère placé sur le plan (ex: accueil, sanitaires, parking).
+// Le libellé n'est pas affiché sur la carte, seulement dans l'édition.
+// `color` n'est appliqué qu'aux icônes SVG (via currentColor).
+model Landmark {
+  id        String   @id @default(cuid())
+  name      String
+  lat       Float
+  lng       Float
+  iconId    String
+  sizePx    Int      @default(32)
+  color     String?  // hex #rrggbb, NULL = couleur par défaut
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  icon LandmarkIcon @relation(fields: [iconId], references: [id], onDelete: Restrict)
+
+  @@index([iconId])
 }
 
 model AuditLog {

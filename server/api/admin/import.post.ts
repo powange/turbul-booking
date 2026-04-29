@@ -3,7 +3,7 @@ import { prisma } from '~~/server/utils/db'
 import { requireRole } from '~~/server/utils/session'
 import { logAudit } from '~~/server/utils/audit'
 
-const SECTIONS = ['caravans', 'zones', 'beds', 'guests', 'bookings', 'unavailabilities'] as const
+const SECTIONS = ['caravans', 'zones', 'walls', 'printFrame', 'beds', 'guests', 'bookings', 'unavailabilities', 'caravanIssues'] as const
 
 const caravanSchema = z.object({
   id: z.string().min(1),
@@ -21,6 +21,32 @@ const zoneSchema = z.object({
   name: z.string().min(1),
   color: z.string().min(1),
   points: z.array(z.tuple([z.number(), z.number()])).min(3)
+})
+
+const wallSchema = z.object({
+  id: z.string().min(1),
+  color: z.string().min(1),
+  thickness: z.number().positive(),
+  points: z.array(z.tuple([z.number(), z.number()])).min(2)
+})
+
+const printFrameSchema = z.object({
+  id: z.string().min(1),
+  lat: z.number(),
+  lng: z.number(),
+  widthMeters: z.number().positive(),
+  rotation: z.number(),
+  orientation: z.enum(['landscape', 'portrait'])
+})
+
+const caravanIssueSchema = z.object({
+  id: z.string().min(1),
+  caravanId: z.string().min(1),
+  label: z.string().min(1),
+  createdAt: z.string().min(1).optional(),
+  createdById: z.string().optional(),
+  resolvedAt: z.string().nullable().optional(),
+  resolvedById: z.string().nullable().optional()
 })
 
 const bedSchema = z.object({
@@ -62,10 +88,13 @@ const bodySchema = z.object({
   data: z.object({
     caravans: z.array(caravanSchema).optional(),
     zones: z.array(zoneSchema).optional(),
+    walls: z.array(wallSchema).optional(),
+    printFrame: z.array(printFrameSchema).optional(),
     beds: z.array(bedSchema).optional(),
     guests: z.array(guestSchema).optional(),
     bookings: z.array(bookingSchema).optional(),
-    unavailabilities: z.array(unavailabilitySchema).optional()
+    unavailabilities: z.array(unavailabilitySchema).optional(),
+    caravanIssues: z.array(caravanIssueSchema).optional()
   })
 })
 
@@ -80,6 +109,7 @@ export default defineEventHandler(async (event) => {
   let validUserIds: Set<string> | null = null
   const needsUserLookup = (sectionsSet.has('bookings') && body.data.bookings?.length)
     || (sectionsSet.has('unavailabilities') && body.data.unavailabilities?.length)
+    || (sectionsSet.has('caravanIssues') && body.data.caravanIssues?.length)
   if (needsUserLookup) {
     const users = await prisma.user.findMany({ select: { id: true } })
     validUserIds = new Set(users.map(u => u.id))
@@ -89,10 +119,13 @@ export default defineEventHandler(async (event) => {
     // Suppression dans l'ordre des dépendances (FK)
     if (sectionsSet.has('bookings')) await tx.booking.deleteMany()
     if (sectionsSet.has('unavailabilities')) await tx.caravanUnavailability.deleteMany()
+    if (sectionsSet.has('caravanIssues')) await tx.caravanIssue.deleteMany()
     if (sectionsSet.has('beds')) await tx.bed.deleteMany()
     if (sectionsSet.has('caravans')) await tx.caravan.deleteMany()
     if (sectionsSet.has('guests')) await tx.guest.deleteMany()
     if (sectionsSet.has('zones')) await tx.zone.deleteMany()
+    if (sectionsSet.has('walls')) await tx.wall.deleteMany()
+    if (sectionsSet.has('printFrame')) await tx.printFrame.deleteMany()
 
     // Création dans l'ordre inverse
     if (sectionsSet.has('caravans') && body.data.caravans?.length) {
@@ -106,6 +139,30 @@ export default defineEventHandler(async (event) => {
           color: z.color,
           points: z.points
         }))
+      })
+    }
+    if (sectionsSet.has('walls') && body.data.walls?.length) {
+      await tx.wall.createMany({
+        data: body.data.walls.map(w => ({
+          id: w.id,
+          color: w.color,
+          thickness: w.thickness,
+          points: w.points
+        }))
+      })
+    }
+    if (sectionsSet.has('printFrame') && body.data.printFrame?.length) {
+      // Singleton : on ne garde que la première entrée (deleteMany a déjà tout vidé).
+      const pf = body.data.printFrame[0]!
+      await tx.printFrame.create({
+        data: {
+          id: pf.id,
+          lat: pf.lat,
+          lng: pf.lng,
+          widthMeters: pf.widthMeters,
+          rotation: pf.rotation,
+          orientation: pf.orientation
+        }
       })
     }
     if (sectionsSet.has('guests') && body.data.guests?.length) {
@@ -146,6 +203,23 @@ export default defineEventHandler(async (event) => {
           createdById: u.createdById && validUserIds!.has(u.createdById)
             ? u.createdById
             : user.id
+        }))
+      })
+    }
+    if (sectionsSet.has('caravanIssues') && body.data.caravanIssues?.length) {
+      await tx.caravanIssue.createMany({
+        data: body.data.caravanIssues.map(i => ({
+          id: i.id,
+          caravanId: i.caravanId,
+          label: i.label,
+          createdAt: i.createdAt ? new Date(i.createdAt) : undefined,
+          createdById: i.createdById && validUserIds!.has(i.createdById)
+            ? i.createdById
+            : user.id,
+          resolvedAt: i.resolvedAt ? new Date(i.resolvedAt) : null,
+          resolvedById: i.resolvedById && validUserIds!.has(i.resolvedById)
+            ? i.resolvedById
+            : null
         }))
       })
     }

@@ -1,0 +1,11 @@
+-- CreateTable
+CREATE TABLE "PrintFrame" (
+    "id" TEXT NOT NULL,
+    "lat" DOUBLE PRECISION NOT NULL,
+    "lng" DOUBLE PRECISION NOT NULL,
+    "widthMeters" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PrintFrame_pkey" PRIMARY KEY ("id")
+);

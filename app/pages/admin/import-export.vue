@@ -7,10 +7,13 @@ const toast = useToast()
 const SECTIONS = [
   { key: 'caravans', label: 'Caravanes' },
   { key: 'zones', label: 'Zones' },
+  { key: 'walls', label: 'Murs' },
+  { key: 'printFrame', label: 'Cadre PDF (impression)' },
   { key: 'beds', label: 'Lits' },
   { key: 'guests', label: 'Hôtes' },
   { key: 'bookings', label: 'Réservations' },
-  { key: 'unavailabilities', label: 'Indisponibilités' }
+  { key: 'unavailabilities', label: 'Indisponibilités' },
+  { key: 'caravanIssues', label: 'Problèmes caravanes' }
 ] as const
 type Section = typeof SECTIONS[number]['key']
 

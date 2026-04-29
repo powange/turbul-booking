@@ -51,6 +51,27 @@ h1, h2, h3 {
     size: A4 landscape;
     margin: 12mm;
   }
+  /* Pages nommées "edge-to-edge" pour l'export du plan (zéro marge,
+     contenu pleine page). Une variante par orientation, sélectionnée
+     via la classe `print-orientation-*` posée sur .plan-map-print-root.
+     IMPORTANT : la propriété `page` est IGNORÉE sur les éléments en
+     `position: fixed` ou `absolute` (spec CSS) — `.plan-map-print-root`
+     est en `position: fixed` en print. On applique donc `page` sur
+     `html` via `:has()` pour que la règle s'applique au document. */
+  @page noMarginLandscape {
+    size: A4 landscape;
+    margin: 0;
+  }
+  @page noMarginPortrait {
+    size: A4 portrait;
+    margin: 0;
+  }
+  html:has(.plan-map-print-root.print-orientation-landscape) {
+    page: noMarginLandscape;
+  }
+  html:has(.plan-map-print-root.print-orientation-portrait) {
+    page: noMarginPortrait;
+  }
 
   /* Cacher la chrome de l'app : header, modales, toasts. */
   body > div > header,
@@ -139,8 +160,12 @@ h1, h2, h3 {
 
   /* === Plan (page d'accueil) === */
   /* Pas de fond carto : on imprime juste les caravanes / zones / murs
-     sur fond blanc, pour économiser l'encre et avoir un rendu schématique. */
-  .leaflet-tile-pane,
+     sur fond blanc, pour économiser l'encre et avoir un rendu schématique.
+     IMPORTANT : on cible `.leaflet-layer` (= les couches de tuiles), pas
+     le `.leaflet-tile-pane` entier — sinon on cache aussi les SVG des
+     zones polygonales qui vivent dans ce pane (placées là pour passer
+     sous caravanes/murs). */
+  .leaflet-tile-pane .leaflet-layer,
   /* Icônes ⚡/🛏️ dans les pins masquées sur le print à la demande. */
   .caravan-pin-icon {
     display: none !important;
@@ -150,10 +175,91 @@ h1, h2, h3 {
     background: white !important;
   }
 
-  /* Wrapper du plan en plein écran A4 paysage (override du
-     calc(100dvh - 4rem) + de min-height: 0 hérité de UMain). */
+  /* Wrapper du plan en plein écran A4 paysage. On le sort du flux normal
+     (`position: fixed`) pour qu'aucun autre élément du document (UHeader,
+     UMain wrapper, slideovers, etc.) ne pousse de contenu en page 2.
+     Combiné à `overflow: hidden` sur html/body ci-dessous, on garantit
+     un export sur une seule feuille. `overflow: hidden` ici cache aussi
+     le débordement du conteneur Leaflet agrandi (voir .plan-map-canvas). */
   .plan-map-print-root {
+    position: fixed !important;
+    inset: 0 !important;
     height: 100vh !important;
     width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    z-index: 9999 !important;
+  }
+
+  /* Conteneur Leaflet à l'impression : on l'agrandit bien au-delà de la
+     page (200vmax × 200vmax) et on le centre. Pourquoi : la rotation CSS
+     du cadre PDF (transform: rotate(var(--print-rotation))) ferait
+     apparaître des coins blancs si le conteneur faisait juste la taille
+     de la page. Avec 200vmax, même la rotation à 45° ne clippe rien (le
+     diagonale d'une page A4 = ~1.41 × max-dim, 2 × max-dim couvre large).
+     `--print-rotation` est posé en JS dans onPrintChange selon
+     `-printFrame.rotation`. */
+  .plan-map-print-root .plan-map-canvas {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 200vmax !important;
+    height: 200vmax !important;
+    transform: translate(-50%, -50%) rotate(var(--print-rotation, 0deg)) !important;
+    transform-origin: center center !important;
+  }
+  /* Tronque toute hauteur résiduelle sur le document : empêche un 2e
+     saut de page si UMain ou un autre conteneur a une min-h-screen.
+     Scope via :has() pour ne PAS s'appliquer à /bookings (planning
+     multi-pages) — uniquement à la page Plan qui contient .plan-map-print-root. */
+  html:has(.plan-map-print-root),
+  body:has(.plan-map-print-root) {
+    height: 100vh !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Masquer les poignées d'édition du cadre PDF dans l'export. La rotation
+     de la vue (cadre PDF aligné avec la feuille A4) est gérée par
+     leaflet-rotate côté JS — voir PlanMap.client.vue:onPrintChange. */
+  .print-frame-marker {
+    display: none !important;
+  }
+
+  /* Étiquettes droites à l'export : on annule la rotation print appliquée
+     au conteneur pour que les pictogrammes (repères) et libellés (caravanes,
+     zones) restent lisibles, peu importe l'orientation du cadre PDF.
+     `--print-rotation` vaut `-printFrame.rotation` (rotation inverse), donc
+     pour remettre l'élément droit il faut appliquer `+printFrame.rotation`,
+     soit `calc(-1 * var(--print-rotation))`.
+     Pour `.caravan-pin`, on conserve le translate(-50%, -50%) qui le centre
+     sur l'ancre Leaflet. Pour les zones, on enveloppe le contenu du tooltip
+     dans `.zone-label-inner` (cf. usePlanZones.ts), parce que le tooltip
+     Leaflet lui-même porte un translate3d que l'on ne peut pas écraser. */
+  .plan-map-print-root .landmark-pin {
+    transform: rotate(calc(-1 * var(--print-rotation, 0deg))) !important;
+    transform-origin: center center !important;
+  }
+  .plan-map-print-root .caravan-pin {
+    transform:
+      translate(-50%, -50%)
+      rotate(calc(-1 * var(--print-rotation, 0deg))) !important;
+    transform-origin: center center !important;
+  }
+  .plan-map-print-root .zone-label-inner {
+    display: inline-block;
+    transform: rotate(calc(-1 * var(--print-rotation, 0deg)));
+    transform-origin: center center;
+  }
+
+  /* Labels de zones : à l'écran ils sont blancs avec un text-shadow noir
+     pour bien ressortir sur les tuiles satellite. À l'impression, fond
+     blanc → on ne verrait que le halo du shadow (effet flou). On force
+     du noir net sans shadow. */
+  .zone-label.leaflet-tooltip {
+    color: black !important;
+    text-shadow: none !important;
   }
 }

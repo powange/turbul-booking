@@ -16,13 +16,14 @@ export interface UsePlanWallsOptions {
   onWallEdited: (id: string, points: Array<[number, number]>) => void
 }
 
-const WALL_PANE = 'wallsPane'
-
 /**
  * Couche murs décoratifs — polylignes libres dessinées via Geoman.
- * Mêmes mécaniques que les zones (pane dédié, édition Geoman sur la
- * sélection) mais pour des polylignes non fermées. Pane z-index 360,
- * entre zones (350) et caravanes (overlay 400).
+ * Mêmes mécaniques que les zones (édition Geoman sur la sélection) mais
+ * pour des polylignes non fermées.
+ *
+ * Panes : les murs sont placés dans l'`overlayPane` (par défaut) puis
+ * explicitement renvoyés en arrière via `bringToBack()` pour rester sous
+ * les polygones de caravanes du même pane.
  */
 export function usePlanWalls(opts: UsePlanWallsOptions) {
   let map: L.Map | null = null
@@ -71,7 +72,6 @@ export function usePlanWalls(opts: UsePlanWallsOptions) {
     } else {
       const polyline = L.polyline(latlngs, {
         ...wallStyle(w),
-        pane: WALL_PANE,
         interactive: true
       })
       polyline.on('click', (e) => {
@@ -80,6 +80,9 @@ export function usePlanWalls(opts: UsePlanWallsOptions) {
         if (opts.canEdit.value) opts.onSelectWall(w.id)
       })
       polyline.addTo(map)
+      // Renvoie en arrière dans l'overlay pour passer sous les
+      // polygones de caravanes (qui partagent le même pane).
+      polyline.bringToBack()
       wallPolylines.set(w.id, polyline)
 
       if (editingWallId === w.id) enableGeomanEdit(w.id)
@@ -137,9 +140,6 @@ export function usePlanWalls(opts: UsePlanWallsOptions) {
 
   function attach(m: L.Map) {
     map = m
-    m.createPane(WALL_PANE)
-    const pane = m.getPane(WALL_PANE)
-    if (pane) pane.style.zIndex = '360'
     diffSyncWalls(opts.walls.value)
     if (opts.wallDrawMode.value) startDraw()
     if (opts.selectedWallId.value) applyEditMode(opts.selectedWallId.value)

@@ -3,7 +3,7 @@ import { prisma } from '~~/server/utils/db'
 import { requireRole } from '~~/server/utils/session'
 import { logAudit } from '~~/server/utils/audit'
 
-const SECTIONS = ['caravans', 'zones', 'beds', 'guests', 'bookings', 'unavailabilities'] as const
+const SECTIONS = ['caravans', 'zones', 'walls', 'printFrame', 'beds', 'guests', 'bookings', 'unavailabilities', 'caravanIssues'] as const
 type Section = typeof SECTIONS[number]
 
 const querySchema = z.object({
@@ -42,6 +42,16 @@ export default defineEventHandler(async (event) => {
       select: { id: true, name: true, color: true, points: true }
     })
   }
+  if (requested.includes('walls')) {
+    result.walls = await prisma.wall.findMany({
+      select: { id: true, color: true, thickness: true, points: true }
+    })
+  }
+  if (requested.includes('printFrame')) {
+    result.printFrame = await prisma.printFrame.findMany({
+      select: { id: true, lat: true, lng: true, widthMeters: true, rotation: true, orientation: true }
+    })
+  }
   if (requested.includes('beds')) {
     result.beds = await prisma.bed.findMany({
       select: { id: true, caravanId: true, label: true, capacity: true, position: true, hasCleanLinen: true }
@@ -65,6 +75,20 @@ export default defineEventHandler(async (event) => {
       ...u,
       from: u.from.toISOString().slice(0, 10),
       to: u.to.toISOString().slice(0, 10)
+    }))
+  }
+  if (requested.includes('caravanIssues')) {
+    const items = await prisma.caravanIssue.findMany({
+      select: {
+        id: true, caravanId: true, label: true,
+        createdAt: true, createdById: true,
+        resolvedAt: true, resolvedById: true
+      }
+    })
+    result.caravanIssues = items.map(i => ({
+      ...i,
+      createdAt: i.createdAt.toISOString(),
+      resolvedAt: i.resolvedAt ? i.resolvedAt.toISOString() : null
     }))
   }
 

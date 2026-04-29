@@ -74,6 +74,20 @@ export interface CaravanIssue {
   resolvedById: string | null
 }
 
+export type PrintFrameOrientation = 'landscape' | 'portrait'
+
+export interface PrintFrame {
+  id: string
+  lat: number
+  lng: number
+  /** Grand côté en mètres (= 297mm équivalent), indépendant de l'orientation. */
+  widthMeters: number
+  rotation: number // degrés horaires depuis le nord
+  orientation: PrintFrameOrientation
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Zone {
   id: string
   name: string
@@ -89,6 +103,32 @@ export interface Wall {
   color: string
   thickness: number
   points: Array<[number, number]>
+  createdAt: string
+  updatedAt: string
+}
+
+export type LandmarkIconFormat = 'png' | 'svg'
+
+export interface LandmarkIcon {
+  id: string
+  name: string
+  format: LandmarkIconFormat
+  mimeType: string
+  sizeBytes: number
+  createdAt: string
+  updatedAt: string
+  createdById: string | null
+}
+
+export interface Landmark {
+  id: string
+  name: string
+  lat: number
+  lng: number
+  iconId: string
+  sizePx: number
+  /** Hex `#rrggbb`, ignoré si l'icône est en PNG. NULL = couleur par défaut. */
+  color: string | null
   createdAt: string
   updatedAt: string
 }
@@ -115,6 +155,13 @@ export type RealtimeEvent
     | 'issue:created'
     | 'issue:updated'
     | 'issue:deleted'
+    | 'printFrame:updated'
+    | 'printFrame:deleted'
+    | 'landmarkIcon:created'
+    | 'landmarkIcon:deleted'
+    | 'landmark:created'
+    | 'landmark:updated'
+    | 'landmark:deleted'
 
 export interface RealtimeMessage<T = unknown> {
   event: RealtimeEvent

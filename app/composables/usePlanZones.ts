@@ -2,7 +2,7 @@ import L from 'leaflet'
 import '@geoman-io/leaflet-geoman-free' // augmente Leaflet avec `layer.pm.*`
 import type { Ref } from 'vue'
 import type { Zone } from '~~/shared/types'
-import { latLngsToPoints, pointsToLatLngs } from '~/utils/leafletGeo'
+import { escapeHtml, latLngsToPoints, pointsToLatLngs } from '~/utils/leafletGeo'
 
 export interface UsePlanZonesOptions {
   zones: Ref<Zone[]>
@@ -15,14 +15,16 @@ export interface UsePlanZonesOptions {
   onZoneEdited: (id: string, points: Array<[number, number]>) => void
 }
 
-const ZONE_PANE = 'zonesPane'
-
 /**
  * Couche zones décoratives — polygones libres dessinés via Geoman, avec
  * label centré. La zone sélectionnée passe en mode édition Geoman
  * (poignées de sommets, drag), et son `pm:edit`/`pm:dragend` émet la
- * nouvelle géométrie au parent. Les zones occupent un pane dédié sous
- * les caravanes (z-index 350).
+ * nouvelle géométrie au parent.
+ *
+ * Panes : les polygones de zone sont placés dans `tilePane` (z-index 200)
+ * — en-dessous de l'overlay (400) où vivent caravanes et murs. L'historique
+ * voulait éviter les panes custom pour compatibilité leaflet-rotate ; on a
+ * abandonné ce plugin mais l'organisation des panes reste valide.
  */
 export function usePlanZones(opts: UsePlanZonesOptions) {
   let map: L.Map | null = null
@@ -53,6 +55,13 @@ export function usePlanZones(opts: UsePlanZonesOptions) {
     target.on('pm:dragend', onUpdate)
   }
 
+  // Le contenu est enveloppé dans un span enfant pour pouvoir lui appliquer
+  // une transformation CSS (contre-rotation en mode print) sans casser le
+  // `translate3d` que Leaflet pose sur l'élément tooltip lui-même.
+  function tooltipHtml(name: string): string {
+    return `<span class="zone-label-inner">${escapeHtml(name)}</span>`
+  }
+
   function syncZone(z: Zone) {
     if (!map) return
     const existing = zonePolygons.get(z.id)
@@ -62,7 +71,7 @@ export function usePlanZones(opts: UsePlanZonesOptions) {
     // style/label.
     if (existing && editingZoneId === z.id) {
       existing.setStyle(zoneStyle(z))
-      existing.getTooltip()?.setContent(z.name)
+      existing.getTooltip()?.setContent(tooltipHtml(z.name))
       return
     }
 
@@ -71,14 +80,14 @@ export function usePlanZones(opts: UsePlanZonesOptions) {
     if (existing) {
       existing.setLatLngs(latlngs)
       existing.setStyle(zoneStyle(z))
-      existing.getTooltip()?.setContent(z.name)
+      existing.getTooltip()?.setContent(tooltipHtml(z.name))
     } else {
       const polygon = L.polygon(latlngs, {
         ...zoneStyle(z),
-        pane: ZONE_PANE,
+        pane: 'tilePane',
         interactive: true
       })
-      polygon.bindTooltip(z.name, {
+      polygon.bindTooltip(tooltipHtml(z.name), {
         permanent: true,
         direction: 'center',
         className: 'zone-label',
@@ -149,9 +158,6 @@ export function usePlanZones(opts: UsePlanZonesOptions) {
 
   function attach(m: L.Map) {
     map = m
-    m.createPane(ZONE_PANE)
-    const pane = m.getPane(ZONE_PANE)
-    if (pane) pane.style.zIndex = '350'
     diffSyncZones(opts.zones.value)
     if (opts.zoneDrawMode.value) startDraw()
     if (opts.selectedZoneId.value) applyEditMode(opts.selectedZoneId.value)

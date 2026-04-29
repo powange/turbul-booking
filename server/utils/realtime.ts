@@ -34,6 +34,13 @@ export type RealtimeEvent
     | 'issue:created'
     | 'issue:updated'
     | 'issue:deleted'
+    | 'printFrame:updated'
+    | 'printFrame:deleted'
+    | 'landmarkIcon:created'
+    | 'landmarkIcon:deleted'
+    | 'landmark:created'
+    | 'landmark:updated'
+    | 'landmark:deleted'
 
 export function broadcast(event: RealtimeEvent, payload: unknown) {
   const message = JSON.stringify({ event, payload })

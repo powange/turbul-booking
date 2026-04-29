@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { addDaysIso, todayIso } from '~/utils/dates'
-import type { Caravan } from '~~/shared/types'
+import type { Caravan, PrintFrame } from '~~/shared/types'
 
 useHead({ title: 'Plan · Turbul Booking' })
 
@@ -469,7 +469,7 @@ function openPrintFramePanel() {
 
 async function savePrintFrame(data: { lat: number, lng: number, widthMeters: number, rotation: number, orientation: 'landscape' | 'portrait' }) {
   try {
-    const updated = await $fetch('/api/print-frame', { method: 'PUT', body: data })
+    const updated = await $fetch<PrintFrame>('/api/print-frame', { method: 'PUT', body: data })
     applyPrintFrameUpdate(updated)
   } catch (err) {
     toast.add({ title: 'Erreur', description: errorMessage(err), color: 'error' })

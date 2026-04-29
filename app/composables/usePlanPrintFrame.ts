@@ -210,6 +210,9 @@ export function usePlanPrintFrame(opts: UsePlanPrintFrameOptions) {
   // ============ Création / sync layers ============
   function ensureLayers(f: PrintFrame) {
     if (!map) return
+    // Capture non-nullable pour les closures (forEach) qui sinon voient
+    // `map: L.Map | null`.
+    const m0 = map
     const cornerLatLngs = corners(f)
 
     // Polygone — overlayPane par défaut + bringToFront pour passer
@@ -221,7 +224,7 @@ export function usePlanPrintFrame(opts: UsePlanPrintFrameOptions) {
         dashArray: '6 4',
         fill: false,
         interactive: false
-      }).addTo(map)
+      }).addTo(m0)
       polygon.bringToFront()
     } else {
       polygon.setLatLngs(cornerLatLngs)
@@ -237,7 +240,7 @@ export function usePlanPrintFrame(opts: UsePlanPrintFrameOptions) {
         draggable: opts.canEdit.value,
         icon: makeCenterIcon(),
         autoPan: true
-      }).addTo(map)
+      }).addTo(m0)
       centerMarker.on('drag', onCenterDrag)
       centerMarker.on('dragend', onCenterDragEnd)
     } else {
@@ -256,7 +259,7 @@ export function usePlanPrintFrame(opts: UsePlanPrintFrameOptions) {
           draggable: opts.canEdit.value,
           icon: makeCornerIcon(),
           autoPan: false
-        }).addTo(map)
+        }).addTo(m0)
         m.on('drag', () => onCornerDrag(m))
         m.on('dragend', onCornerDragEnd)
         cornerMarkers[idx] = m
@@ -270,7 +273,7 @@ export function usePlanPrintFrame(opts: UsePlanPrintFrameOptions) {
         draggable: opts.canEdit.value,
         icon: makeRotationIcon(),
         autoPan: false
-      }).addTo(map)
+      }).addTo(m0)
       rotationMarker.on('drag', onRotationDrag)
       rotationMarker.on('dragend', onRotationDragEnd)
     } else {

@@ -68,7 +68,7 @@ const statusOptions = [
   { label: 'À traiter', value: 'open' },
   { label: 'Tous', value: 'all' },
   { label: 'Résolus', value: 'resolved' }
-] as const
+]
 
 const filterCaravanOptions = computed(() =>
   [...caravans.value]

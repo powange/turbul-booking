@@ -64,13 +64,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 415, statusMessage: 'Format non supporté (PNG ou SVG attendu)' })
   }
 
+  // Prisma 7 attend `Uint8Array<ArrayBuffer>` strict pour Bytes. Node Buffer
+  // étend Uint8Array mais son `.buffer` est `ArrayBufferLike` au type system,
+  // d'où l'erreur de compatibilité. La copie est négligeable (≤ 256 KB).
+  const bytes = new Uint8Array(storedData)
+
   const icon = await prisma.landmarkIcon.create({
     data: {
       name,
       format,
       mimeType,
-      data: storedData,
-      sizeBytes: storedData.length,
+      data: bytes,
+      sizeBytes: bytes.length,
       createdById: user.id
     },
     select: {

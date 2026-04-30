@@ -461,4 +461,21 @@ onBeforeUnmount(() => {
 .zone-label.leaflet-tooltip::before {
   display: none;
 }
+/* Le span interne reçoit un offset vertical appliqué par le decluttering
+   greedy (cf. usePlanZones.ts) via la custom property `--declutter-y`.
+   Transition douce pour éviter le snap à chaque zoom/move quand un
+   label change de slot. La CSS print écrase entièrement `transform`
+   pour appliquer sa contre-rotation, donc pas de conflit là-bas.
+   `max-width` + wrapping pour que les noms longs (ex. "Cuisine
+   collective") passent sur plusieurs lignes au lieu de s'étirer. */
+.zone-label-inner {
+  display: inline-block;
+  max-width: 8em;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.15;
+  transform: translateY(var(--declutter-y, 0));
+  transition: transform 150ms ease-out;
+}
 </style>

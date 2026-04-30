@@ -124,6 +124,99 @@ export function usePlanZones(opts: UsePlanZonesOptions) {
       if (!newIds.has(id)) removeZone(id)
     }
     for (const z of list) syncZone(z)
+    scheduleDeclutter()
+  }
+
+  // ============ Decluttering des labels ============
+  // Algorithme greedy : trie les zones par taille décroissante (priorité
+  // aux grandes), garde la 1re centrée, déplace verticalement les
+  // suivantes si leur bbox chevauche une déjà placée.
+  // Déclencheurs : après un sync des zones, après zoomend/moveend.
+  // L'offset est appliqué en `translateY` sur le `<span class="zone-label-inner">`
+  // (transform indépendant du `translate3d` que Leaflet pose sur le tooltip
+  // outer pour le positionner au centre du polygone).
+
+  let declutterScheduled = false
+  function scheduleDeclutter() {
+    if (declutterScheduled) return
+    declutterScheduled = true
+    requestAnimationFrame(() => {
+      declutterScheduled = false
+      applyLabelDeclutter()
+    })
+  }
+
+  function rectsOverlap(a: DOMRect, b: DOMRect): boolean {
+    return !(a.right < b.left || b.right < a.left || a.bottom < b.top || b.bottom < a.top)
+  }
+
+  function shiftRect(r: DOMRect, dy: number): DOMRect {
+    return {
+      x: r.x,
+      y: r.y + dy,
+      left: r.left,
+      right: r.right,
+      top: r.top + dy,
+      bottom: r.bottom + dy,
+      width: r.width,
+      height: r.height,
+      toJSON: () => r.toJSON()
+    } as DOMRect
+  }
+
+  const STEP_PX = 18
+  const MAX_TRIES = 10
+
+  function applyLabelDeclutter() {
+    if (!map) return
+    type Entry = { span: HTMLElement, baseBbox: DOMRect, priority: number }
+    const entries: Entry[] = []
+
+    for (const polygon of zonePolygons.values()) {
+      const ttEl = polygon.getTooltip()?.getElement()
+      if (!ttEl) continue
+      const span = ttEl.querySelector('.zone-label-inner') as HTMLElement | null
+      if (!span) continue
+      // Reset l'offset précédent avant de mesurer (via la custom property
+      // `--declutter-y` pour ne PAS conflicter avec la CSS print qui
+      // pose un `transform: rotate(...)` sur ce même span).
+      span.style.setProperty('--declutter-y', '0px')
+
+      // Priorité = aire de la bbox du polygone en pixels écran. Les
+      // grandes zones gardent leur label centré ; les petites cèdent.
+      const bounds = polygon.getBounds()
+      const sw = map.latLngToContainerPoint(bounds.getSouthWest())
+      const ne = map.latLngToContainerPoint(bounds.getNorthEast())
+      const priority = Math.abs((ne.x - sw.x) * (ne.y - sw.y))
+
+      // getBoundingClientRect après reset = position centrée native
+      const baseBbox = span.getBoundingClientRect()
+      // Skip les labels invisibles (hors viewport, span vide, etc.)
+      if (baseBbox.width === 0 || baseBbox.height === 0) continue
+      entries.push({ span, baseBbox, priority })
+    }
+
+    entries.sort((a, b) => b.priority - a.priority)
+
+    const placed: DOMRect[] = []
+    for (const e of entries) {
+      let bbox = e.baseBbox
+      let offsetY = 0
+      let tries = 0
+      while (tries < MAX_TRIES && placed.some(p => rectsOverlap(p, bbox))) {
+        // Alterne ±step pour pousser le label dans la direction la moins
+        // encombrée (1: +step, 2: -step, 3: +2step, 4: -2step, ...)
+        const sign = tries % 2 === 0 ? 1 : -1
+        const magnitude = Math.ceil((tries + 1) / 2) * STEP_PX
+        offsetY = sign * magnitude
+        bbox = shiftRect(e.baseBbox, offsetY)
+        tries++
+      }
+      if (offsetY !== 0) {
+        e.span.style.setProperty('--declutter-y', `${offsetY}px`)
+      }
+      placed.push(bbox)
+    }
   }
 
   function applyEditMode(id: string | null) {
@@ -161,9 +254,13 @@ export function usePlanZones(opts: UsePlanZonesOptions) {
     diffSyncZones(opts.zones.value)
     if (opts.zoneDrawMode.value) startDraw()
     if (opts.selectedZoneId.value) applyEditMode(opts.selectedZoneId.value)
+    // Re-decluttering au déplacement / zoom (les positions screen des
+    // tooltips changent → les collisions changent).
+    m.on('zoomend moveend', scheduleDeclutter)
   }
 
   function detach() {
+    map?.off('zoomend moveend', scheduleDeclutter)
     zonePolygons.forEach(p => p.remove())
     zonePolygons.clear()
     editingZoneId = null
